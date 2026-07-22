@@ -1,0 +1,70 @@
+[
+  {
+    "id": "object_image_microwave",
+    "task": "object",
+    "images": ["object_location/images/000000086408.jpg"],
+    "instruction": "What appliance can be used to heat food quickly.",
+    "format_prompt": "Generate coordinates for one object bounding box. Constraints: x1,y1,x2,y2 ∈ [0,1000]. Response must be in the format: <object> (x1, y1), (x2, y2) </object>",
+    "recorded_points": [[331, 42], [553, 271]]
+  },
+  {
+    "id": "object_video_blue_cloth",
+    "task": "object",
+    "images": ["object_location/videos/0/00000.jpg", "object_location/videos/0/00015.jpg", "object_location/videos/0/00030.jpg", "object_location/videos/0/00045.jpg", "object_location/videos/0/00060.jpg", "object_location/videos/0/00075.jpg", "object_location/videos/0/00090.jpg", "object_location/videos/0/00105.jpg"],
+    "instruction": "Please detect the the blue cloth in the bathroom in this video.",
+    "format_prompt": "Output the bounding box in the format <object> <frame n>: ...; (x1,y1), (x2,y2) </object>, where x,y are in the range of (0,1000), n is the chosen frame index.",
+    "recorded_frame": 7,
+    "recorded_points": [[645, 113], [1000, 738]]
+  },
+  {
+    "id": "area_image_clear_desk",
+    "task": "area",
+    "images": ["area_location/images/Snipaste_2025-03-06_11-04-32.jpg"],
+    "instruction": "Find several locations within the clear area to the right of the black mesh organizer.",
+    "format_prompt": "Express the coordinates as a tuple sequence in the format <area> (x1, y1), (x2, y2), ... </area> with all coordinate values normalized to the standardized pixel coordinate system spanning 0 to 1000.",
+    "recorded_points": [[430, 853], [450, 853], [427, 885], [448, 885], [440, 881], [440, 881]]
+  },
+  {
+    "id": "area_video_nightstand",
+    "task": "area",
+    "images": ["area_location/videos/0/frame_000.jpg", "area_location/videos/0/frame_001.jpg", "area_location/videos/0/frame_002.jpg", "area_location/videos/0/frame_003.jpg", "area_location/videos/0/frame_004.jpg", "area_location/videos/0/frame_005.jpg", "area_location/videos/0/frame_005_1.jpg"],
+    "instruction": "Find several locations on the vacant section of the dark brown nightstand beside the bed.",
+    "format_prompt": "Two-stage process:\n1. Key frame prediction\n2. Tuple series output.\nOutput format: <area> <frame n>: ...; (x1, y1), (x2, y2), .... </area>\nFormat constraints:\n- Tuple syntax: (x, y)\n- Coordinate bounds: 0 ≤ x,y ≤ 1000\n- Series format: comma-separated.",
+    "recorded_frame": 5,
+    "recorded_points": [[331, 792], [331, 791], [330, 791], [330, 791], [330, 791]]
+  },
+  {
+    "id": "affordance_image_cabinet",
+    "task": "affordance",
+    "images": ["affordance_location/images/Snipaste_2025-03-06_11-04-32.jpg"],
+    "instruction": "Open the left cabinet door",
+    "format_prompt": "Identify one affordance point and provide its normalized pixel coordinates. The x and y values must be between 0 and 1000. Output format: <affordance> (x, y) </affordance>.",
+    "recorded_points": [[573, 313]]
+  },
+  {
+    "id": "affordance_video_pillow",
+    "task": "affordance",
+    "images": ["affordance_location/videos/0/frame_000.jpg", "affordance_location/videos/0/frame_000_1.jpg", "affordance_location/videos/0/frame_000_2.jpg", "affordance_location/videos/0/frame_001.jpg", "affordance_location/videos/0/frame_002.jpg", "affordance_location/videos/0/frame_003.jpg", "affordance_location/videos/0/frame_004.jpg", "affordance_location/videos/0/frame_005.jpg", "affordance_location/videos/0/frame_005_1.jpg", "affordance_location/videos/0/frame_005_2.jpg"],
+    "instruction": "Lift the patterned pillow on the far left of the sofa",
+    "format_prompt": "Complete two tasks:\n1. Key frame prediction\n2. Single affordance point coordinates: (x, y)\nOutput format: <affordance> <frame n>: ...; (x, y) </affordance>\nAll coordinates normalized to 0-1000 range.",
+    "recorded_frame": 6,
+    "recorded_points": [[215, 423]]
+  },
+  {
+    "id": "trajectory_image_cabinet",
+    "task": "trajectory",
+    "images": ["trajectory_location/images/Snipaste_2025-03-11_21-08-58.png"],
+    "instruction": "Open the white cabinet on the right side",
+    "format_prompt": "Predict a trajectory comprising up to 10 key points. Return coordinates in the format <trajectory> (x1, y1), (x2, y2), ... </trajectory> with all values normalized to the [0, 1000] range.",
+    "recorded_points": [[403, 203], [413, 206], [423, 209], [433, 212]]
+  },
+  {
+    "id": "trajectory_video_chopsticks",
+    "task": "trajectory",
+    "images": ["trajectory_location/videos/0/frame_000.jpg", "trajectory_location/videos/0/frame_000_1.jpg", "trajectory_location/videos/0/frame_000_2.jpg", "trajectory_location/videos/0/frame_001.jpg", "trajectory_location/videos/0/frame_002.jpg", "trajectory_location/videos/0/frame_003.jpg", "trajectory_location/videos/0/frame_004.jpg", "trajectory_location/videos/0/frame_005.jpg", "trajectory_location/videos/0/frame_005_1.jpg"],
+    "instruction": "Move the black chopsticks from the container on the left to the metal rack on the right",
+    "format_prompt": "First predict the frame containing the trajectory start point, then output up to 10 key trajectory points as a list of tuples in the format: <trajectory> <frame n>: ...; (x1, y1), (x2, y2), .... </trajectory> All coordinates must be normalized between 0 and 1000.",
+    "recorded_frame": 4,
+    "recorded_points": [[144, 379], [144, 369], [144, 363], [144, 357], [144, 351], [144, 345], [144, 340], [144, 334]]
+  }
+]
