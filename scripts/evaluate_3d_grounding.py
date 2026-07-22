@@ -176,7 +176,11 @@ def main() -> None:
         else:
             shown_case = cases[(rank + 1) % len(cases)] if cyclic_image else case
         image_path = IMAGES / shown_case["image"]
-        prompt_intrinsics = list(shown_case["intrinsics"])
+        swap_intrinsics_with_image = bool(
+            config.get("swap_intrinsics_with_image", True)
+        )
+        intrinsics_case = shown_case if swap_intrinsics_with_image else case
+        prompt_intrinsics = list(intrinsics_case["intrinsics"])
         intrinsics_scale = float(config.get("intrinsics_scale", 1.0))
         include_intrinsics = bool(config.get("include_intrinsics", True))
         explicit_no_object = bool(config.get("explicit_no_object", False))
@@ -197,6 +201,7 @@ def main() -> None:
             "shown_category": shown_case["category"],
             "cyclic_image": cyclic_image,
             "same_category_swapped": shown_case["id"] != case["id"],
+            "prompt_intrinsics_case_id": intrinsics_case["id"],
             "model_id": config["model_id"],
         }
         started = time.perf_counter()

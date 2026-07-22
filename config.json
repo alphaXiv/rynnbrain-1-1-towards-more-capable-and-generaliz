@@ -6,6 +6,7 @@
   "explicit_no_object": false,
   "cyclic_image": false,
   "same_category_swap": true,
+  "swap_intrinsics_with_image": false,
   "white_frame": false,
   "task": "native_3d_grounding",
   "serialization_template_only": true
