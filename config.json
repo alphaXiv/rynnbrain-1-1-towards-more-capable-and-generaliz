@@ -5,7 +5,7 @@
   "include_intrinsics": true,
   "explicit_no_object": false,
   "cyclic_image": false,
-  "fixed_image_case_id": "sunrgbd_chair",
+  "fixed_image_case_id": "sunrgbd_bed",
   "white_frame": false,
   "category_overrides": {
     "sunrgbd_chair": "chair",
