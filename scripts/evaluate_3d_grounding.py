@@ -46,12 +46,17 @@ def format_intrinsics(values: list[float]) -> str:
     ) + "]"
 
 
-def build_prompt(category: str, intrinsics: list[float]) -> str:
+def build_prompt(
+    category: str, intrinsics: list[float], include_intrinsics: bool = True
+) -> str:
+    intrinsics_block = (
+        f"The camera intrinsics matrix is:\n{format_intrinsics(intrinsics)}\n\n"
+        if include_intrinsics
+        else ""
+    )
     return f"""Find all {category} in this image.
 
-The camera intrinsics matrix is:
-{format_intrinsics(intrinsics)}
-
+{intrinsics_block}\
 Predict 3D bounding boxes in the camera coordinate system, where:
 - x points to the right
 - y points downward
@@ -132,7 +137,10 @@ def main() -> None:
             dtype=torch.bfloat16,
             attn_implementation="sdpa",
         ).to(device).eval()
-        prompt = build_prompt(case["category"], case["intrinsics"])
+        include_intrinsics = bool(config.get("include_intrinsics", True))
+        prompt = build_prompt(
+            case["category"], case["intrinsics"], include_intrinsics
+        )
         conversation = [{
             "role": "user",
             "content": [
@@ -174,6 +182,7 @@ def main() -> None:
             "prompt": prompt,
             "response": response,
             "boxes": boxes,
+            "include_intrinsics": include_intrinsics,
             "box_count": len(boxes),
             "format_valid": bool(boxes),
             "physical_valid": physical,
