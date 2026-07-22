@@ -43,18 +43,13 @@ def prepare_image_and_reference(
     image_path = DATA / str(case["image"])
     if transform is None:
         return image_path, reference
-    if transform != "rotate_180":
+    if transform != "grayscale":
         raise ValueError(f"unsupported image_transform={transform!r}")
     transformed_dir = Path("/tmp/rynnbrain-transformed-inputs")
     transformed_dir.mkdir(parents=True, exist_ok=True)
     transformed_path = transformed_dir / f"{case['id']}.png"
     with Image.open(image_path) as image:
-        image.convert("RGB").transpose(Image.Transpose.ROTATE_180).save(
-            transformed_path
-        )
-    if reference is not None:
-        x, y, theta = reference
-        reference = (1000.0 - x, 1000.0 - y, theta % 180.0)
+        image.convert("L").convert("RGB").save(transformed_path)
     return transformed_path, reference
 
 
