@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import copy
 import json
 import statistics
 import time
@@ -54,7 +55,14 @@ def main() -> None:
     )
 
     rows: list[dict[str, object]] = []
-    for case in cases:
+    reverse_video_frames = bool(config.get("reverse_video_frames", False))
+    for source_case in cases:
+        case = copy.deepcopy(source_case)
+        source_recorded_frame = case.get("recorded_frame")
+        if reverse_video_frames and len(case["images"]) > 1:
+            case["images"].reverse()
+            if source_recorded_frame is not None:
+                case["recorded_frame"] = len(case["images"]) - 1 - source_recorded_frame
         conversation = [{"role": "user", "content": build_content(case)}]
         inputs = processor.apply_chat_template(
             conversation,
@@ -99,6 +107,8 @@ def main() -> None:
             "task": case["task"],
             "model_id": config["model_id"],
             "image_count": len(case["images"]),
+            "reverse_video_frames": reverse_video_frames,
+            "source_recorded_frame": source_recorded_frame,
             "instruction": case["instruction"],
             "response": response,
             "points": points,
