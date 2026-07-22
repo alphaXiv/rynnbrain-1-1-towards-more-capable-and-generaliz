@@ -5,14 +5,14 @@
   "include_intrinsics": true,
   "white_frame": false,
   "category_overrides": {
-    "sunrgbd_chair": "bed",
-    "sunrgbd_bed": "bottle",
-    "sunrgbd_table": "car",
-    "driving_cars": "sofa",
-    "office_chairs": "bottle",
-    "lounge_sofa": "car",
-    "lounge_table": "bottle",
-    "manipulation_bottle": "bed"
+    "sunrgbd_chair": "blicket",
+    "sunrgbd_bed": "blicket",
+    "sunrgbd_table": "blicket",
+    "driving_cars": "blicket",
+    "office_chairs": "blicket",
+    "lounge_sofa": "blicket",
+    "lounge_table": "blicket",
+    "manipulation_bottle": "blicket"
   },
   "task": "native_3d_grounding"
 }
