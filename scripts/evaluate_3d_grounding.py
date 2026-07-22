@@ -288,6 +288,20 @@ def main() -> None:
                 serialization_example,
                 serialization_template_only,
             )
+            corrupted_intrinsics_warning = bool(
+                config.get("corrupted_intrinsics_warning", False)
+            )
+            if corrupted_intrinsics_warning:
+                prompt += (
+                    "\n\nCalibration robustness instruction: The supplied focal "
+                    "lengths may be corrupted. Do not let changing focal-number "
+                    "metadata alone change the metric center or size. Base metric "
+                    "scale on visible object and scene evidence; use intrinsics "
+                    "only when consistent with that evidence.\n"
+                )
+            result["corrupted_intrinsics_warning"] = (
+                corrupted_intrinsics_warning
+            )
             conversation = [{
                 "role": "user",
                 "content": [
