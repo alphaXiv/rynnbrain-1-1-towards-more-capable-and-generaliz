@@ -63,6 +63,7 @@ def build_prompt(
     serialization_example: list[float] | None = None,
     serialization_template_only: bool = False,
     repeat_constraints_last: bool = False,
+    reasoning_cue: bool = False,
 ) -> str:
     intrinsics_block = (
         f"The camera intrinsics matrix is:\n{format_intrinsics(intrinsics)}\n\n"
@@ -114,6 +115,14 @@ def build_prompt(
         if repeat_constraints_last
         else ""
     )
+    reasoning_instruction = (
+        "\nBefore the final answer, reason step by step about image evidence, "
+        "camera intrinsics, projection, metric scale, and every physical constraint. "
+        "Then provide the tagged boxes.\n"
+        if reasoning_cue
+        else ""
+    )
+    thinking_stub = "" if reasoning_cue else "<think>\n\n</think>\n\n"
     return f"""Find all {category} in this image.
 
 {intrinsics_block}Predict 3D bounding boxes in the camera coordinate system, where:
@@ -135,7 +144,8 @@ Constraints:
 - Use normalized values in [-1, 1] for pitch, yaw, roll
 {example}
 {final_constraints}
-<think>\n\n</think>\n\n"""
+{reasoning_instruction}
+{thinking_stub}"""
 
 
 def box_is_physical(box: list[float]) -> bool:
@@ -270,6 +280,7 @@ def main() -> None:
                 config.get("repeat_constraints_last", False)
             )
             enable_thinking = bool(config.get("enable_thinking", False))
+            reasoning_cue = bool(config.get("reasoning_cue", False))
             prompt = build_prompt(
                 requested_category,
                 prompt_intrinsics,
@@ -281,6 +292,7 @@ def main() -> None:
                 serialization_example,
                 serialization_template_only,
                 repeat_constraints_last,
+                reasoning_cue,
             )
             conversation = [{
                 "role": "user",
@@ -369,6 +381,7 @@ def main() -> None:
                 "serialization_template_only": serialization_template_only,
                 "repeat_constraints_last": repeat_constraints_last,
                 "enable_thinking": enable_thinking,
+                "reasoning_cue": reasoning_cue,
                 "requested_category": requested_category,
                 "prompt_intrinsics": prompt_intrinsics,
                 "box_count": len(boxes),
