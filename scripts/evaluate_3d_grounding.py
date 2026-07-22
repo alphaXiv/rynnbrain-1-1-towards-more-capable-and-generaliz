@@ -24,6 +24,15 @@ TAG_PATTERN = re.compile(
     r"<3D\s+Grounding>\s*(.*?)\s*</3D\s+Grounding>", re.IGNORECASE | re.DOTALL
 )
 NUMBER_PATTERN = re.compile(r"[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?")
+CALIBRATION_BASELINES = {
+    "sunrgbd_chair": [-0.16, -0.01, 1.37],
+    "sunrgbd_bed": [-0.12, -0.06, 3.22],
+    "sunrgbd_table": [0.31, -0.19, 1.97],
+    "office_chairs": [-0.72, -0.52, 6.44],
+    "lounge_sofa": [-1.14, -0.36, 3.61],
+    "lounge_table": [0.40, 0.13, 2.20],
+    "manipulation_bottle": [0.05, -0.06, 1.17],
+}
 
 
 def parse_boxes(text: str) -> list[list[float]]:
@@ -124,6 +133,19 @@ def main() -> None:
     rows: list[dict[str, object]] = []
     for rank, case in enumerate(cases):
         image_path = IMAGES / case["image"]
+        prompt_intrinsics = list(case["intrinsics"])
+        horizontal_flip = bool(config.get("horizontal_flip", False))
+        model_image_path = image_path
+        with Image.open(image_path) as source_image:
+            image_size = source_image.size
+            if horizontal_flip:
+                transformed_dir = Path("/tmp/rynnbrain-3d-transformed")
+                transformed_dir.mkdir(parents=True, exist_ok=True)
+                model_image_path = transformed_dir / f"horizontal-flip-{rank}.png"
+                source_image.transpose(Image.Transpose.FLIP_LEFT_RIGHT).save(
+                    model_image_path
+                )
+                prompt_intrinsics[2] = image_size[0] - 1 - prompt_intrinsics[2]
         result: dict[str, object] = {
             "rank": rank,
             "case_id": case["id"],
@@ -132,11 +154,11 @@ def main() -> None:
         }
         started = time.perf_counter()
         try:
-            prompt = build_prompt(case["category"], case["intrinsics"])
+            prompt = build_prompt(case["category"], prompt_intrinsics)
             conversation = [{
                 "role": "user",
                 "content": [
-                    {"type": "image", "image": str(image_path)},
+                    {"type": "image", "image": str(model_image_path)},
                     {"type": "text", "text": prompt},
                 ],
             }]
@@ -164,13 +186,11 @@ def main() -> None:
             output_ids = output_ids[:, inputs["input_ids"].shape[1] :]
             response = processor.decode(output_ids[0], skip_special_tokens=True)
             boxes = parse_boxes(response)
-            with Image.open(image_path) as image:
-                image_size = image.size
             physical = bool(boxes and all(box_is_physical(box) for box in boxes))
             projected = bool(
                 boxes
                 and any(
-                    center_projects_inside(box, case["intrinsics"], image_size)
+                    center_projects_inside(box, prompt_intrinsics, image_size)
                     for box in boxes
                 )
             )
@@ -178,6 +198,8 @@ def main() -> None:
                 "prompt": prompt,
                 "response": response,
                 "boxes": boxes,
+                "horizontal_flip": horizontal_flip,
+                "prompt_intrinsics": prompt_intrinsics,
                 "box_count": len(boxes),
                 "format_valid": bool(boxes),
                 "physical_valid": physical,
@@ -202,6 +224,23 @@ def main() -> None:
                     abs(boxes[0][index] - reference[index])
                     for index in range(6, 9)
                 )
+            baseline = CALIBRATION_BASELINES.get(case["id"])
+            if boxes and baseline is not None:
+                expected = [-baseline[0], baseline[1], baseline[2]]
+                result["calibration_baseline_center"] = baseline
+                result["calibration_expected_center"] = expected
+                result["calibration_expected_center_error_m"] = math.dist(
+                    boxes[0][:3], expected
+                )
+                result["calibration_unflipped_center_error_m"] = math.dist(
+                    boxes[0][:3], baseline
+                )
+                result["calibration_expected_x_error_m"] = abs(
+                    boxes[0][0] - expected[0]
+                )
+                result["calibration_unflipped_x_error_m"] = abs(
+                    boxes[0][0] - baseline[0]
+                )
         except Exception as exc:
             result.update({
                 "error": f"{type(exc).__name__}: {exc}",
@@ -216,6 +255,9 @@ def main() -> None:
     physical = [row for row in successes if row.get("physical_valid")]
     projected = [row for row in successes if row.get("projection_valid")]
     referenced = [row for row in parsed if "recorded_center_error_m" in row]
+    calibrated = [
+        row for row in parsed if "calibration_expected_center_error_m" in row
+    ]
     summary = {
         "model_id": config["model_id"],
         "cases": len(rows),
@@ -234,6 +276,18 @@ def main() -> None:
         "mean_recorded_angle_mae": statistics.fmean(
             row["recorded_angle_mae"] for row in referenced
         ) if referenced else None,
+        "mean_calibration_expected_center_error_m": statistics.fmean(
+            row["calibration_expected_center_error_m"] for row in calibrated
+        ) if calibrated else None,
+        "mean_calibration_unflipped_center_error_m": statistics.fmean(
+            row["calibration_unflipped_center_error_m"] for row in calibrated
+        ) if calibrated else None,
+        "mean_calibration_expected_x_error_m": statistics.fmean(
+            row["calibration_expected_x_error_m"] for row in calibrated
+        ) if calibrated else None,
+        "mean_calibration_unflipped_x_error_m": statistics.fmean(
+            row["calibration_unflipped_x_error_m"] for row in calibrated
+        ) if calibrated else None,
         "mean_inference_seconds": statistics.fmean(
             row["inference_seconds"] for row in successes
         ) if successes else None,
