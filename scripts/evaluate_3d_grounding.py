@@ -205,6 +205,7 @@ def main() -> None:
             repeat_constraints_last = bool(
                 config.get("repeat_constraints_last", False)
             )
+            enable_thinking = bool(config.get("enable_thinking", False))
             requested_category = config.get("category_overrides", {}).get(
                 case["id"], case["category"]
             )
@@ -224,7 +225,7 @@ def main() -> None:
             inputs = processor.apply_chat_template(
                 conversation,
                 add_generation_prompt=True,
-                enable_thinking=False,
+                enable_thinking=enable_thinking,
                 tokenize=True,
                 return_dict=True,
                 return_tensors="pt",
@@ -260,6 +261,7 @@ def main() -> None:
                 "serialization_example": serialization_example,
                 "serialization_template_only": serialization_template_only,
                 "repeat_constraints_last": repeat_constraints_last,
+                "enable_thinking": enable_thinking,
                 "intrinsics_scale": intrinsics_scale,
                 "include_intrinsics": include_intrinsics,
                 "explicit_no_object": explicit_no_object,
