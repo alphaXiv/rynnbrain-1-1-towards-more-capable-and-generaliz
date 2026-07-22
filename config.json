@@ -1,7 +1,8 @@
 {
   "model_id": "Qwen/Qwen3.5-122B-A10B",
   "max_new_tokens": 512,
-  "intrinsics_scale": 2.0,
+  "intrinsics_scale": 1.0,
+  "principal_point_dx": 200.0,
   "task": "native_3d_grounding",
   "serialization_example": [-0.15, 0.05, 1.45, 0.72, 1.0, 0.68, 0.28, 0.15, 0.17]
 }
