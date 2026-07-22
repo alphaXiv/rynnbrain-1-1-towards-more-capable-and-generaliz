@@ -14,12 +14,14 @@ from transformers import AutoModelForImageTextToText, AutoProcessor
 
 from evaluate_localization_suite import (
     DATA,
+    RESULTS,
     ROOT,
     bbox_iou,
     build_content,
     parse_response,
     point_chamfer,
     point_count_valid,
+    rotated_180_case,
 )
 
 
@@ -54,7 +56,10 @@ def main() -> None:
     )
 
     rows: list[dict[str, object]] = []
-    for case in cases:
+    RESULTS.mkdir(parents=True, exist_ok=True)
+    for rank, source_case in enumerate(cases):
+        rotation_180 = bool(config.get("rotation_180", False))
+        case = rotated_180_case(source_case, rank) if rotation_180 else source_case
         conversation = [{"role": "user", "content": build_content(case)}]
         inputs = processor.apply_chat_template(
             conversation,
@@ -99,6 +104,8 @@ def main() -> None:
             "task": case["task"],
             "model_id": config["model_id"],
             "image_count": len(case["images"]),
+            "rotation_180": rotation_180,
+            "source_recorded_points": case.get("source_recorded_points"),
             "instruction": case["instruction"],
             "response": response,
             "points": points,
