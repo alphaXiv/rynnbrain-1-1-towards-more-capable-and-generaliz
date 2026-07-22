@@ -57,6 +57,8 @@ def build_prompt(
     intrinsics: list[float],
     serialization_example: list[float] | None = None,
     include_intrinsics: bool = True,
+    x_direction: str = "right",
+    y_direction: str = "downward",
 ) -> str:
     intrinsics_block = (
         f"The camera intrinsics matrix is:\n{format_intrinsics(intrinsics)}\n\n"
@@ -74,8 +76,8 @@ def build_prompt(
     return f"""Find all {category} in this image.
 
 {intrinsics_block}Predict 3D bounding boxes in the camera coordinate system, where:
-- x points to the right
-- y points downward
+- x points to the {x_direction}
+- y points {y_direction}
 - z points forward
 
 For each object, return:
@@ -106,13 +108,17 @@ def box_is_physical(box: list[float]) -> bool:
 
 
 def center_projects_inside(
-    box: list[float], intrinsics: list[float], image_size: tuple[int, int]
+    box: list[float],
+    intrinsics: list[float],
+    image_size: tuple[int, int],
+    x_axis_sign: float = 1.0,
+    y_axis_sign: float = 1.0,
 ) -> bool:
     if box[2] <= 0:
         return False
     fx, fy, cx, cy = intrinsics
-    u = fx * box[0] / box[2] + cx
-    v = fy * box[1] / box[2] + cy
+    u = fx * x_axis_sign * box[0] / box[2] + cx
+    v = fy * y_axis_sign * box[1] / box[2] + cy
     width, height = image_size
     return bool(math.isfinite(u) and math.isfinite(v) and 0 <= u < width and 0 <= v < height)
 
@@ -154,6 +160,8 @@ def main() -> None:
         include_intrinsics = bool(config.get("include_intrinsics", True))
         white_frame = bool(config.get("white_frame", False))
         blur_radius = float(config.get("blur_radius", 0.0))
+        x_axis_sign = float(config.get("x_axis_sign", 1.0))
+        y_axis_sign = float(config.get("y_axis_sign", 1.0))
         prompt_intrinsics[0] *= intrinsics_scale
         prompt_intrinsics[1] *= intrinsics_scale
         model_image_path = image_path
@@ -181,7 +189,9 @@ def main() -> None:
             )
             prompt = build_prompt(
                 requested_category, prompt_intrinsics, serialization_example,
-                include_intrinsics
+                include_intrinsics,
+                "left" if x_axis_sign < 0 else "right",
+                "upward" if y_axis_sign < 0 else "downward",
             )
             conversation = [{
                 "role": "user",
@@ -218,7 +228,13 @@ def main() -> None:
             projected = bool(
                 boxes
                 and any(
-                    center_projects_inside(box, prompt_intrinsics, image_size)
+                    center_projects_inside(
+                        box,
+                        prompt_intrinsics,
+                        image_size,
+                        x_axis_sign,
+                        y_axis_sign,
+                    )
                     for box in boxes
                 )
             )
@@ -231,6 +247,8 @@ def main() -> None:
                 "include_intrinsics": include_intrinsics,
                 "white_frame": white_frame,
                 "blur_radius": blur_radius,
+                "x_axis_sign": x_axis_sign,
+                "y_axis_sign": y_axis_sign,
                 "requested_category": requested_category,
                 "prompt_intrinsics": prompt_intrinsics,
                 "box_count": len(boxes),
@@ -268,8 +286,8 @@ def main() -> None:
             baseline = CALIBRATION_BASELINES.get(case["id"])
             if boxes and baseline is not None:
                 expected = [
-                    baseline[0] / intrinsics_scale,
-                    baseline[1] / intrinsics_scale,
+                    x_axis_sign * baseline[0] / intrinsics_scale,
+                    y_axis_sign * baseline[1] / intrinsics_scale,
                     baseline[2],
                 ]
                 result["calibration_baseline_center"] = baseline
