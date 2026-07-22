@@ -163,6 +163,7 @@ def main() -> None:
     input_device = torch.device("cuda:0")
     config = json.loads((ROOT / "config.json").read_text())
     cases = json.loads((DATA / "test_cases.json").read_text())
+    cases_by_id = {case["id"]: case for case in cases}
     model_dir = Path("/tmp/model-snapshot")
     print(f"Downloading immutable snapshot for {config['model_id']}", flush=True)
     snapshot_download(repo_id=config["model_id"], local_dir=model_dir, max_workers=32)
@@ -187,7 +188,13 @@ def main() -> None:
 
     rows: list[dict[str, object]] = []
     for rank, case in enumerate(cases):
-        image_path = IMAGES / case["image"]
+        fixed_image_case_id = config.get("fixed_image_case_id")
+        shown_case = (
+            cases_by_id[fixed_image_case_id]
+            if fixed_image_case_id is not None
+            else case
+        )
+        image_path = IMAGES / shown_case["image"]
         prompt_intrinsics = list(case["intrinsics"])
         intrinsics_scale = float(config.get("intrinsics_scale", 1.0))
         include_intrinsics = bool(config.get("include_intrinsics", True))
@@ -246,12 +253,17 @@ def main() -> None:
             "rank": rank,
             "case_id": case["id"],
             "category": case["category"],
+            "shown_case_id": shown_case["id"],
+            "shown_category": shown_case["category"],
+            "prompt_intrinsics_case_id": case["id"],
             "model_id": config["model_id"],
         }
         started = time.perf_counter()
         try:
-            requested_category = config.get("category_overrides", {}).get(
-                case["id"], case["category"]
+            requested_category = config.get("fixed_requested_category") or (
+                config.get("category_overrides", {}).get(
+                    case["id"], case["category"]
+                )
             )
             serialization_example = config.get("serialization_example")
             serialization_template_only = bool(
@@ -379,6 +391,11 @@ def main() -> None:
                     abs(camera_boxes[0][index] - reference[index])
                     for index in range(6, 9)
                 )
+            shown_reference = shown_case.get("recorded_reference")
+            if camera_boxes and shown_reference is not None and coordinate_scale == 1.0:
+                result["shown_image_reference_center_error_m"] = math.dist(
+                    camera_boxes[0][:3], shown_reference[:3]
+                )
             if camera_boxes and serialization_example is not None:
                 result["serialization_anchor_center_error_m"] = math.dist(
                     camera_boxes[0][:3], serialization_example[:3]
@@ -428,6 +445,9 @@ def main() -> None:
     physical = [row for row in successes if row.get("physical_valid")]
     projected = [row for row in successes if row.get("projection_valid")]
     referenced = [row for row in parsed if "recorded_center_error_m" in row]
+    shown_referenced = [
+        row for row in parsed if "shown_image_reference_center_error_m" in row
+    ]
     anchored = [
         row for row in parsed if "serialization_anchor_center_error_m" in row
     ]
@@ -452,6 +472,9 @@ def main() -> None:
         "mean_recorded_angle_mae": statistics.fmean(
             row["recorded_angle_mae"] for row in referenced
         ) if referenced else None,
+        "mean_shown_image_reference_center_error_m": statistics.fmean(
+            row["shown_image_reference_center_error_m"] for row in shown_referenced
+        ) if shown_referenced else None,
         "mean_serialization_anchor_center_error_m": statistics.fmean(
             row["serialization_anchor_center_error_m"] for row in anchored
         ) if anchored else None,
