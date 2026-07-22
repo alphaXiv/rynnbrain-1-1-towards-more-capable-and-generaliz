@@ -1,6 +1,6 @@
 {
   "model_id": "Alibaba-DAMO-Academy/RynnBrain1.1-122B-A10B",
   "max_new_tokens": 512,
-  "horizontal_flip": true,
+  "vertical_flip": true,
   "task": "native_3d_grounding"
 }
