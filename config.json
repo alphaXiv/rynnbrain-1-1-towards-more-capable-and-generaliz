@@ -3,9 +3,9 @@
   "max_new_tokens": 512,
   "intrinsics_scale": 1.0,
   "include_intrinsics": true,
+  "repeat_constraints_last": true,
   "explicit_no_object": false,
   "cyclic_image": false,
   "white_frame": false,
-  "task": "native_3d_grounding",
-  "serialization_template_only": true
+  "task": "native_3d_grounding"
 }
