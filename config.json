@@ -8,6 +8,7 @@
   "white_frame": false,
   "fixed_image_case_id": "sunrgbd_chair",
   "fixed_requested_category": "chair",
+  "principal_x_offset_sweep": [-300, -200, -100, 0, 100, 200, 300, 400],
   "task": "native_3d_grounding",
   "serialization_template_only": true
 }
