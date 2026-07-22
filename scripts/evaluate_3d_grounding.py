@@ -63,6 +63,7 @@ def build_prompt(
     serialization_example: list[float] | None = None,
     serialization_template_only: bool = False,
     repeat_constraints_last: bool = False,
+    enumerate_instances_last: bool = False,
 ) -> str:
     intrinsics_block = (
         f"The camera intrinsics matrix is:\n{format_intrinsics(intrinsics)}\n\n"
@@ -114,6 +115,12 @@ def build_prompt(
         if repeat_constraints_last
         else ""
     )
+    instance_instruction = (
+        f"\nInstance check: output one separate tagged 3D box for every distinct "
+        f"visible {category}; do not merge multiple objects into one box.\n"
+        if enumerate_instances_last
+        else ""
+    )
     return f"""Find all {category} in this image.
 
 {intrinsics_block}Predict 3D bounding boxes in the camera coordinate system, where:
@@ -135,6 +142,7 @@ Constraints:
 - Use normalized values in [-1, 1] for pitch, yaw, roll
 {example}
 {final_constraints}
+{instance_instruction}
 <think>\n\n</think>\n\n"""
 
 
@@ -269,6 +277,9 @@ def main() -> None:
             repeat_constraints_last = bool(
                 config.get("repeat_constraints_last", False)
             )
+            enumerate_instances_last = bool(
+                config.get("enumerate_instances_last", False)
+            )
             prompt = build_prompt(
                 requested_category,
                 prompt_intrinsics,
@@ -280,6 +291,7 @@ def main() -> None:
                 serialization_example,
                 serialization_template_only,
                 repeat_constraints_last,
+                enumerate_instances_last,
             )
             conversation = [{
                 "role": "user",
@@ -367,6 +379,7 @@ def main() -> None:
                 "serialization_example": serialization_example,
                 "serialization_template_only": serialization_template_only,
                 "repeat_constraints_last": repeat_constraints_last,
+                "enumerate_instances_last": enumerate_instances_last,
                 "requested_category": requested_category,
                 "prompt_intrinsics": prompt_intrinsics,
                 "box_count": len(boxes),
