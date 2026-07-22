@@ -208,7 +208,12 @@ def main() -> None:
         white_frame = bool(config.get("white_frame", False))
         blur_radius = float(config.get("blur_radius", 0.0))
         grayscale_frame = bool(config.get("grayscale_frame", False))
-        image_scale = float(config.get("image_scale", 1.0))
+        image_scale_sweep = config.get("image_scale_sweep")
+        image_scale = (
+            float(image_scale_sweep[rank])
+            if image_scale_sweep is not None
+            else float(config.get("image_scale", 1.0))
+        )
         crop_fraction = float(config.get("crop_fraction", 1.0))
         x_axis_sign = float(config.get("x_axis_sign", 1.0))
         y_axis_sign = float(config.get("y_axis_sign", 1.0))
