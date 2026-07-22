@@ -46,10 +46,7 @@ def parse_boxes(text: str) -> list[list[float]]:
 
 def format_intrinsics(values: list[float]) -> str:
     fx, fy, cx, cy = values
-    rows = [[fx, 0.0, cx], [0.0, fy, cy], [0.0, 0.0, 1.0]]
-    return "[" + ", ".join(
-        "[" + ", ".join(f"{value:.2f}" for value in row) + "]" for row in rows
-    ) + "]"
+    return f"fx={fx:.2f}, fy={fy:.2f}, cx={cx:.2f}, cy={cy:.2f}"
 
 
 def build_prompt(
@@ -61,7 +58,7 @@ def build_prompt(
     serialization_template_only: bool = False,
 ) -> str:
     intrinsics_block = (
-        f"The camera intrinsics matrix is:\n{format_intrinsics(intrinsics)}\n\n"
+        f"The camera intrinsics are:\n{format_intrinsics(intrinsics)}\n\n"
         if include_intrinsics
         else ""
     )
