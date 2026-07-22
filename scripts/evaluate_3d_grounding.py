@@ -118,9 +118,13 @@ def main() -> None:
     case = cases[rank]
     image_path = IMAGES / case["image"]
     intrinsics_scale = float(config.get("intrinsics_scale", 1.0))
+    principal_point_dx = float(config.get("principal_point_dx", 0.0))
+    principal_point_dy = float(config.get("principal_point_dy", 0.0))
     prompt_intrinsics = list(case["intrinsics"])
     prompt_intrinsics[0] *= intrinsics_scale
     prompt_intrinsics[1] *= intrinsics_scale
+    prompt_intrinsics[2] += principal_point_dx
+    prompt_intrinsics[3] += principal_point_dy
     result: dict[str, object] = {
         "rank": rank,
         "case_id": case["id"],
@@ -179,6 +183,8 @@ def main() -> None:
             "response": response,
             "boxes": boxes,
             "intrinsics_scale": intrinsics_scale,
+            "principal_point_dx": principal_point_dx,
+            "principal_point_dy": principal_point_dy,
             "prompt_intrinsics": prompt_intrinsics,
             "box_count": len(boxes),
             "format_valid": bool(boxes),
@@ -199,8 +205,18 @@ def main() -> None:
         baseline = case.get("calibration_baseline")
         if boxes and baseline is not None:
             expected = list(baseline)
-            expected[0] /= intrinsics_scale
-            expected[1] /= intrinsics_scale
+            expected[0] = (
+                baseline[0] / intrinsics_scale
+                - principal_point_dx
+                * baseline[2]
+                / (case["intrinsics"][0] * intrinsics_scale)
+            )
+            expected[1] = (
+                baseline[1] / intrinsics_scale
+                - principal_point_dy
+                * baseline[2]
+                / (case["intrinsics"][1] * intrinsics_scale)
+            )
             result["calibration_baseline"] = baseline
             result["calibration_expected_center"] = expected[:3]
             result["calibration_expected_center_error_m"] = math.dist(
