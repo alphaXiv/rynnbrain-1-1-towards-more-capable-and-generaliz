@@ -99,6 +99,13 @@ def build_prompt(
             f"<3D Grounding> {serialized} </3D Grounding>\n"
             "Return only tagged 3D Grounding boxes, never JSON or prose.\n"
         )
+    initial_constraints = (
+        ""
+        if repeat_constraints_last
+        else "\nConstraints:\n- x_size >= z_size\n"
+        f"- {units_constraint}\n"
+        "- Use normalized values in [-1, 1] for pitch, yaw, roll\n"
+    )
     final_constraints = (
         "\nFinal answer check: z must be positive; all three sizes must be positive; "
         "x_size must be at least z_size; and pitch, yaw, roll must each be in "
@@ -120,11 +127,7 @@ Definitions:
 - {center_definition}
 - x_size, y_size, z_size: box dimensions in the box local coordinate system, in {coordinate_units}
 - pitch, yaw, roll: normalized rotations in the range [-1, 1], corresponding to [-180, 180] degrees
-
-Constraints:
-- x_size >= z_size
-- {units_constraint}
-- Use normalized values in [-1, 1] for pitch, yaw, roll
+{initial_constraints}
 {example}
 {final_constraints}
 <think>\n\n</think>\n\n"""
