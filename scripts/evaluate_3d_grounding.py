@@ -147,18 +147,18 @@ def main() -> None:
     for rank, case in enumerate(cases):
         image_path = IMAGES / case["image"]
         prompt_intrinsics = list(case["intrinsics"])
-        horizontal_flip = bool(config.get("horizontal_flip", False))
+        vertical_flip = bool(config.get("vertical_flip", False))
         model_image_path = image_path
         with Image.open(image_path) as source_image:
             image_size = source_image.size
-            if horizontal_flip:
+            if vertical_flip:
                 transformed_dir = Path("/tmp/rynnbrain-3d-transformed")
                 transformed_dir.mkdir(parents=True, exist_ok=True)
-                model_image_path = transformed_dir / f"horizontal-flip-{rank}.png"
-                source_image.transpose(Image.Transpose.FLIP_LEFT_RIGHT).save(
+                model_image_path = transformed_dir / f"vertical-flip-{rank}.png"
+                source_image.transpose(Image.Transpose.FLIP_TOP_BOTTOM).save(
                     model_image_path
                 )
-                prompt_intrinsics[2] = image_size[0] - 1 - prompt_intrinsics[2]
+                prompt_intrinsics[3] = image_size[1] - 1 - prompt_intrinsics[3]
         result: dict[str, object] = {
             "rank": rank,
             "case_id": case["id"],
@@ -215,7 +215,7 @@ def main() -> None:
                 "response": response,
                 "boxes": boxes,
                 "serialization_example": serialization_example,
-                "horizontal_flip": horizontal_flip,
+                "vertical_flip": vertical_flip,
                 "prompt_intrinsics": prompt_intrinsics,
                 "box_count": len(boxes),
                 "format_valid": bool(boxes),
@@ -251,7 +251,7 @@ def main() -> None:
                 )
             baseline = CALIBRATION_BASELINES.get(case["id"])
             if boxes and baseline is not None:
-                expected = [-baseline[0], baseline[1], baseline[2]]
+                expected = [baseline[0], -baseline[1], baseline[2]]
                 result["calibration_baseline_center"] = baseline
                 result["calibration_expected_center"] = expected
                 result["calibration_expected_center_error_m"] = math.dist(
@@ -260,11 +260,11 @@ def main() -> None:
                 result["calibration_unflipped_center_error_m"] = math.dist(
                     boxes[0][:3], baseline
                 )
-                result["calibration_expected_x_error_m"] = abs(
-                    boxes[0][0] - expected[0]
+                result["calibration_expected_y_error_m"] = abs(
+                    boxes[0][1] - expected[1]
                 )
-                result["calibration_unflipped_x_error_m"] = abs(
-                    boxes[0][0] - baseline[0]
+                result["calibration_unflipped_y_error_m"] = abs(
+                    boxes[0][1] - baseline[1]
                 )
         except Exception as exc:
             result.update({
@@ -316,11 +316,11 @@ def main() -> None:
         "mean_calibration_unflipped_center_error_m": statistics.fmean(
             row["calibration_unflipped_center_error_m"] for row in calibrated
         ) if calibrated else None,
-        "mean_calibration_expected_x_error_m": statistics.fmean(
-            row["calibration_expected_x_error_m"] for row in calibrated
+        "mean_calibration_expected_y_error_m": statistics.fmean(
+            row["calibration_expected_y_error_m"] for row in calibrated
         ) if calibrated else None,
-        "mean_calibration_unflipped_x_error_m": statistics.fmean(
-            row["calibration_unflipped_x_error_m"] for row in calibrated
+        "mean_calibration_unflipped_y_error_m": statistics.fmean(
+            row["calibration_unflipped_y_error_m"] for row in calibrated
         ) if calibrated else None,
         "mean_inference_seconds": statistics.fmean(
             row["inference_seconds"] for row in successes
