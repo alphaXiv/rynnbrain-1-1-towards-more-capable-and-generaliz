@@ -4,7 +4,7 @@
   "intrinsics_scale": 1.0,
   "include_intrinsics": true,
   "explicit_no_object": true,
-  "white_frame": true,
+  "white_frame": false,
   "blur_radius": 0.0,
   "grayscale_frame": false,
   "image_scale": 1.0,
