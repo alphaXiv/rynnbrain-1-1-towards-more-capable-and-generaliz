@@ -1,5 +1,5 @@
 {
-  "model_id": "Qwen/Qwen3.5-9B",
+  "model_id": "Qwen/Qwen3.5-2B",
   "max_new_tokens": 256,
   "horizontal_flip": true,
   "task": "official_localization_cookbook"
