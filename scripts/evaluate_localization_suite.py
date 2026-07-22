@@ -154,6 +154,26 @@ def rotated_180_case(case: dict[str, object], rank: int) -> dict[str, object]:
     return transformed
 
 
+def vertically_flipped_case(case: dict[str, object], rank: int) -> dict[str, object]:
+    transformed = copy.deepcopy(case)
+    flipped_images = []
+    for index, relative_path in enumerate(case["images"]):
+        source_path = ASSETS / relative_path
+        target_path = RESULTS / f"vflip-rank-{rank}-image-{index}.png"
+        with Image.open(source_path) as source_image:
+            source_image.transpose(Image.Transpose.FLIP_TOP_BOTTOM).save(target_path)
+        flipped_images.append(str(target_path))
+    transformed["images"] = flipped_images
+    transformed_points = [
+        [point[0], 1000 - point[1]] for point in case["recorded_points"]
+    ]
+    if case["task"] == "object":
+        transformed_points.reverse()
+    transformed["recorded_points"] = transformed_points
+    transformed["source_recorded_points"] = case["recorded_points"]
+    return transformed
+
+
 def main() -> None:
     dist.init_process_group("nccl")
     rank = dist.get_rank()
@@ -184,6 +204,9 @@ def main() -> None:
     rotation_180 = bool(config.get("rotation_180", False))
     if rotation_180:
         case = rotated_180_case(case, rank)
+    vertical_flip = bool(config.get("vertical_flip", False))
+    if vertical_flip:
+        case = vertically_flipped_case(case, rank)
     result: dict[str, object] = {
         "rank": rank,
         "case_id": case["id"],
@@ -193,6 +216,7 @@ def main() -> None:
         "horizontal_flip": horizontal_flip,
         "grayscale": grayscale,
         "rotation_180": rotation_180,
+        "vertical_flip": vertical_flip,
     }
     started = time.perf_counter()
     try:
