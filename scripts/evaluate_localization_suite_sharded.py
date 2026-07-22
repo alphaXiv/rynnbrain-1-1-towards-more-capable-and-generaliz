@@ -11,9 +11,11 @@ from pathlib import Path
 
 import torch
 from huggingface_hub import snapshot_download
+from PIL import Image
 from transformers import AutoModelForImageTextToText, AutoProcessor
 
 from evaluate_localization_suite import (
+    ASSETS,
     DATA,
     ROOT,
     bbox_iou,
@@ -22,6 +24,31 @@ from evaluate_localization_suite import (
     point_chamfer,
     point_count_valid,
 )
+
+
+def apply_inset_letterbox(case: dict[str, object], scale: float) -> None:
+    """Shrink each frame around its center and update normalized anchors."""
+    output_dir = Path("/tmp/inset-letterbox") / str(case["id"])
+    output_dir.mkdir(parents=True, exist_ok=True)
+    transformed_images: list[str] = []
+    for index, relative_path in enumerate(case["images"]):
+        with Image.open(ASSETS / relative_path) as source:
+            image = source.convert("RGB")
+        width, height = image.size
+        inset_width = round(width * scale)
+        inset_height = round(height * scale)
+        canvas = Image.new("RGB", (width, height), "white")
+        resized = image.resize((inset_width, inset_height), Image.Resampling.BICUBIC)
+        canvas.paste(resized, ((width - inset_width) // 2, (height - inset_height) // 2))
+        output_path = output_dir / f"frame-{index:02d}.png"
+        canvas.save(output_path)
+        transformed_images.append(str(output_path))
+    case["images"] = transformed_images
+    offset = 500.0 * (1.0 - scale)
+    case["recorded_points"] = [
+        [offset + scale * x, offset + scale * y]
+        for x, y in case["recorded_points"]
+    ]
 
 
 def main() -> None:
@@ -56,13 +83,17 @@ def main() -> None:
 
     rows: list[dict[str, object]] = []
     reverse_video_frames = bool(config.get("reverse_video_frames", False))
+    inset_letterbox_scale = config.get("inset_letterbox_scale")
     for source_case in cases:
         case = copy.deepcopy(source_case)
         source_recorded_frame = case.get("recorded_frame")
+        source_recorded_points = copy.deepcopy(case["recorded_points"])
         if reverse_video_frames and len(case["images"]) > 1:
             case["images"].reverse()
             if source_recorded_frame is not None:
                 case["recorded_frame"] = len(case["images"]) - 1 - source_recorded_frame
+        if inset_letterbox_scale is not None:
+            apply_inset_letterbox(case, float(inset_letterbox_scale))
         conversation = [{"role": "user", "content": build_content(case)}]
         inputs = processor.apply_chat_template(
             conversation,
@@ -108,7 +139,9 @@ def main() -> None:
             "model_id": config["model_id"],
             "image_count": len(case["images"]),
             "reverse_video_frames": reverse_video_frames,
+            "inset_letterbox_scale": inset_letterbox_scale,
             "source_recorded_frame": source_recorded_frame,
+            "source_recorded_points": source_recorded_points,
             "instruction": case["instruction"],
             "response": response,
             "points": points,

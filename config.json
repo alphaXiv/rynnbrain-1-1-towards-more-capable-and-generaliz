@@ -1,6 +1,7 @@
 {
   "model_id": "Alibaba-DAMO-Academy/RynnBrain1.1-122B-A10B",
   "max_new_tokens": 256,
-  "reverse_video_frames": true,
+  "reverse_video_frames": false,
+  "inset_letterbox_scale": 0.8,
   "task": "official_localization_cookbook"
 }
