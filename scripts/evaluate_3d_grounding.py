@@ -140,11 +140,15 @@ def main() -> None:
         prompt_intrinsics = list(case["intrinsics"])
         intrinsics_scale = float(config.get("intrinsics_scale", 1.0))
         include_intrinsics = bool(config.get("include_intrinsics", True))
+        white_frame = bool(config.get("white_frame", False))
         prompt_intrinsics[0] *= intrinsics_scale
         prompt_intrinsics[1] *= intrinsics_scale
         model_image_path = image_path
         with Image.open(image_path) as source_image:
             image_size = source_image.size
+            if white_frame:
+                model_image_path = Path(f"/tmp/white-frame-rank-{rank}.png")
+                Image.new("RGB", image_size, "white").save(model_image_path)
         result: dict[str, object] = {
             "rank": rank,
             "case_id": case["id"],
@@ -201,6 +205,7 @@ def main() -> None:
                 "boxes": boxes,
                 "intrinsics_scale": intrinsics_scale,
                 "include_intrinsics": include_intrinsics,
+                "white_frame": white_frame,
                 "prompt_intrinsics": prompt_intrinsics,
                 "box_count": len(boxes),
                 "format_valid": bool(boxes),
