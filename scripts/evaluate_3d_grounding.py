@@ -195,7 +195,17 @@ def main() -> None:
             else case
         )
         image_path = IMAGES / shown_case["image"]
-        prompt_intrinsics = list(case["intrinsics"])
+        principal_x_offset_sweep = config.get("principal_x_offset_sweep")
+        intrinsics_case = (
+            shown_case if principal_x_offset_sweep is not None else case
+        )
+        principal_x_offset = (
+            float(principal_x_offset_sweep[rank])
+            if principal_x_offset_sweep is not None
+            else 0.0
+        )
+        prompt_intrinsics = list(intrinsics_case["intrinsics"])
+        prompt_intrinsics[2] += principal_x_offset
         intrinsics_scale = float(config.get("intrinsics_scale", 1.0))
         include_intrinsics = bool(config.get("include_intrinsics", True))
         white_frame = bool(config.get("white_frame", False))
@@ -255,7 +265,8 @@ def main() -> None:
             "category": case["category"],
             "shown_case_id": shown_case["id"],
             "shown_category": shown_case["category"],
-            "prompt_intrinsics_case_id": case["id"],
+            "prompt_intrinsics_case_id": intrinsics_case["id"],
+            "principal_x_offset": principal_x_offset,
             "model_id": config["model_id"],
         }
         started = time.perf_counter()
