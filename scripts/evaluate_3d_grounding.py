@@ -62,6 +62,7 @@ def build_prompt(
     center_representation: str = "camera_xyz",
     serialization_example: list[float] | None = None,
     repeat_constraints_last: bool = False,
+    serialization_template_only: bool = False,
 ) -> str:
     intrinsics_block = (
         f"The camera intrinsics matrix is:\n{format_intrinsics(intrinsics)}\n\n"
@@ -92,7 +93,14 @@ def build_prompt(
             f"Use {coordinate_units} for cx, cy, cz, x_size, y_size, z_size"
         )
     example = ""
-    if serialization_example is not None:
+    if serialization_template_only:
+        example = (
+            "\nFormat template (field names are placeholders, not values):\n"
+            f"<3D Grounding> {center_fields}, x_size, y_size, z_size, "
+            "pitch, yaw, roll </3D Grounding>\n"
+            "Return only tagged 3D Grounding boxes, never JSON or prose.\n"
+        )
+    elif serialization_example is not None:
         serialized = ", ".join(f"{value:.2f}" for value in serialization_example)
         example = (
             "\nSerialization example (format only; do not copy its values):\n"
@@ -258,6 +266,9 @@ def main() -> None:
             repeat_constraints_last = bool(
                 config.get("repeat_constraints_last", False)
             )
+            serialization_template_only = bool(
+                config.get("serialization_template_only", False)
+            )
             prompt = build_prompt(
                 requested_category,
                 prompt_intrinsics,
@@ -268,6 +279,7 @@ def main() -> None:
                 center_representation,
                 serialization_example,
                 repeat_constraints_last,
+                serialization_template_only,
             )
             conversation = [{
                 "role": "user",
@@ -354,6 +366,7 @@ def main() -> None:
                 "center_representation": center_representation,
                 "serialization_example": serialization_example,
                 "repeat_constraints_last": repeat_constraints_last,
+                "serialization_template_only": serialization_template_only,
                 "requested_category": requested_category,
                 "prompt_intrinsics": prompt_intrinsics,
                 "box_count": len(boxes),
