@@ -13,7 +13,7 @@ from pathlib import Path
 
 import torch
 from huggingface_hub import snapshot_download
-from PIL import Image
+from PIL import Image, ImageFilter
 from transformers import AutoModelForImageTextToText, AutoProcessor
 
 
@@ -141,6 +141,7 @@ def main() -> None:
         intrinsics_scale = float(config.get("intrinsics_scale", 1.0))
         include_intrinsics = bool(config.get("include_intrinsics", True))
         white_frame = bool(config.get("white_frame", False))
+        blur_radius = float(config.get("blur_radius", 0.0))
         prompt_intrinsics[0] *= intrinsics_scale
         prompt_intrinsics[1] *= intrinsics_scale
         model_image_path = image_path
@@ -149,6 +150,11 @@ def main() -> None:
             if white_frame:
                 model_image_path = Path(f"/tmp/white-frame-rank-{rank}.png")
                 Image.new("RGB", image_size, "white").save(model_image_path)
+            elif blur_radius > 0:
+                model_image_path = Path(f"/tmp/blurred-frame-rank-{rank}.png")
+                source_image.convert("RGB").filter(
+                    ImageFilter.GaussianBlur(radius=blur_radius)
+                ).save(model_image_path)
         result: dict[str, object] = {
             "rank": rank,
             "case_id": case["id"],
@@ -209,6 +215,7 @@ def main() -> None:
                 "intrinsics_scale": intrinsics_scale,
                 "include_intrinsics": include_intrinsics,
                 "white_frame": white_frame,
+                "blur_radius": blur_radius,
                 "requested_category": requested_category,
                 "prompt_intrinsics": prompt_intrinsics,
                 "box_count": len(boxes),
