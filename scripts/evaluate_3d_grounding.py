@@ -125,6 +125,16 @@ def main() -> None:
     prompt_intrinsics[1] *= intrinsics_scale
     prompt_intrinsics[2] += principal_point_dx
     prompt_intrinsics[3] += principal_point_dy
+    horizontal_flip = bool(config.get("horizontal_flip", False))
+    model_image_path = image_path
+    with Image.open(image_path) as source_image:
+        image_size = source_image.size
+        if horizontal_flip:
+            model_image_path = RESULTS / f"horizontal-flip-rank-{rank}.png"
+            source_image.transpose(Image.Transpose.FLIP_LEFT_RIGHT).save(
+                model_image_path
+            )
+            prompt_intrinsics[2] = image_size[0] - 1 - prompt_intrinsics[2]
     result: dict[str, object] = {
         "rank": rank,
         "case_id": case["id"],
@@ -144,7 +154,7 @@ def main() -> None:
         conversation = [{
             "role": "user",
             "content": [
-                {"type": "image", "image": str(image_path)},
+                {"type": "image", "image": str(model_image_path)},
                 {"type": "text", "text": prompt},
             ],
         }]
@@ -168,8 +178,6 @@ def main() -> None:
         output_ids = output_ids[:, inputs["input_ids"].shape[1] :]
         response = processor.decode(output_ids[0], skip_special_tokens=True)
         boxes = parse_boxes(response)
-        with Image.open(image_path) as image:
-            image_size = image.size
         physical = bool(boxes and all(box_is_physical(box) for box in boxes))
         projected = bool(
             boxes
@@ -185,6 +193,7 @@ def main() -> None:
             "intrinsics_scale": intrinsics_scale,
             "principal_point_dx": principal_point_dx,
             "principal_point_dy": principal_point_dy,
+            "horizontal_flip": horizontal_flip,
             "prompt_intrinsics": prompt_intrinsics,
             "box_count": len(boxes),
             "format_valid": bool(boxes),
@@ -217,8 +226,16 @@ def main() -> None:
                 * baseline[2]
                 / (case["intrinsics"][1] * intrinsics_scale)
             )
+            if horizontal_flip:
+                expected[0] *= -1
             result["calibration_baseline"] = baseline
             result["calibration_expected_center"] = expected[:3]
+            result["calibration_expected_x_error_m"] = abs(
+                boxes[0][0] - expected[0]
+            )
+            result["calibration_unflipped_x_error_m"] = abs(
+                boxes[0][0] - baseline[0]
+            )
             result["calibration_expected_center_error_m"] = math.dist(
                 boxes[0][:3], expected[:3]
             )
@@ -269,6 +286,12 @@ def main() -> None:
             ) if calibrated else None,
             "mean_calibration_unscaled_center_error_m": statistics.fmean(
                 row["calibration_unscaled_center_error_m"] for row in calibrated
+            ) if calibrated else None,
+            "mean_calibration_expected_x_error_m": statistics.fmean(
+                row["calibration_expected_x_error_m"] for row in calibrated
+            ) if calibrated else None,
+            "mean_calibration_unflipped_x_error_m": statistics.fmean(
+                row["calibration_unflipped_x_error_m"] for row in calibrated
             ) if calibrated else None,
             "mean_inference_seconds": statistics.fmean(
                 row["inference_seconds"] for row in successes
