@@ -117,6 +117,12 @@ def main() -> None:
 
     case = cases[rank]
     image_path = IMAGES / case["image"]
+    white_frame = bool(config.get("white_frame", False))
+    model_image_path = image_path
+    if white_frame:
+        with Image.open(image_path) as source_image:
+            model_image_path = RESULTS / f"white-frame-rank-{rank}.png"
+            Image.new("RGB", source_image.size, "white").save(model_image_path)
     result: dict[str, object] = {
         "rank": rank,
         "case_id": case["id"],
@@ -136,7 +142,7 @@ def main() -> None:
         conversation = [{
             "role": "user",
             "content": [
-                {"type": "image", "image": str(image_path)},
+                {"type": "image", "image": str(model_image_path)},
                 {"type": "text", "text": prompt},
             ],
         }]
@@ -174,6 +180,7 @@ def main() -> None:
             "prompt": prompt,
             "response": response,
             "boxes": boxes,
+            "white_frame": white_frame,
             "box_count": len(boxes),
             "format_valid": bool(boxes),
             "physical_valid": physical,
