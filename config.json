@@ -7,11 +7,12 @@
   "blur_radius": 0.0,
   "grayscale_frame": false,
   "image_scale": 1.0,
-  "crop_fraction": 0.8,
+  "crop_fraction": 1.0,
   "x_axis_sign": 1.0,
   "y_axis_sign": 1.0,
   "coordinate_scale": 1.0,
   "coordinate_units": "meters",
   "center_representation": "camera_xyz",
-  "task": "native_3d_grounding"
+  "task": "native_3d_grounding",
+  "serialization_example": [-0.15, 0.05, 1.45, 0.72, 1.0, 0.68, 0.28, 0.15, 0.17]
 }

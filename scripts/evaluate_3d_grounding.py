@@ -60,6 +60,7 @@ def build_prompt(
     y_direction: str = "downward",
     coordinate_units: str = "meters",
     center_representation: str = "camera_xyz",
+    serialization_example: list[float] | None = None,
 ) -> str:
     intrinsics_block = (
         f"The camera intrinsics matrix is:\n{format_intrinsics(intrinsics)}\n\n"
@@ -89,6 +90,14 @@ def build_prompt(
         units_constraint = (
             f"Use {coordinate_units} for cx, cy, cz, x_size, y_size, z_size"
         )
+    example = ""
+    if serialization_example is not None:
+        serialized = ", ".join(f"{value:.2f}" for value in serialization_example)
+        example = (
+            "\nSerialization example (format only; do not copy its values):\n"
+            f"<3D Grounding> {serialized} </3D Grounding>\n"
+            "Return only tagged 3D Grounding boxes, never JSON or prose.\n"
+        )
     return f"""Find all {category} in this image.
 
 {intrinsics_block}Predict 3D bounding boxes in the camera coordinate system, where:
@@ -108,6 +117,7 @@ Constraints:
 - x_size >= z_size
 - {units_constraint}
 - Use normalized values in [-1, 1] for pitch, yaw, roll
+{example}
 <think>\n\n</think>\n\n"""
 
 
@@ -235,6 +245,7 @@ def main() -> None:
             requested_category = config.get("category_overrides", {}).get(
                 case["id"], case["category"]
             )
+            serialization_example = config.get("serialization_example")
             prompt = build_prompt(
                 requested_category,
                 prompt_intrinsics,
@@ -243,6 +254,7 @@ def main() -> None:
                 "upward" if y_axis_sign < 0 else "downward",
                 coordinate_units,
                 center_representation,
+                serialization_example,
             )
             conversation = [{
                 "role": "user",
@@ -327,6 +339,7 @@ def main() -> None:
                 "coordinate_scale": coordinate_scale,
                 "coordinate_units": coordinate_units,
                 "center_representation": center_representation,
+                "serialization_example": serialization_example,
                 "requested_category": requested_category,
                 "prompt_intrinsics": prompt_intrinsics,
                 "box_count": len(boxes),
@@ -352,6 +365,14 @@ def main() -> None:
                 result["recorded_angle_mae"] = statistics.fmean(
                     abs(camera_boxes[0][index] - reference[index])
                     for index in range(6, 9)
+                )
+            if camera_boxes and serialization_example is not None:
+                result["serialization_anchor_center_error_m"] = math.dist(
+                    camera_boxes[0][:3], serialization_example[:3]
+                )
+                result["serialization_anchor_full_mae"] = statistics.fmean(
+                    abs(camera_boxes[0][index] - serialization_example[index])
+                    for index in range(9)
                 )
             baseline = CALIBRATION_BASELINES.get(case["id"])
             if camera_boxes and baseline is not None:
@@ -394,6 +415,9 @@ def main() -> None:
     physical = [row for row in successes if row.get("physical_valid")]
     projected = [row for row in successes if row.get("projection_valid")]
     referenced = [row for row in parsed if "recorded_center_error_m" in row]
+    anchored = [
+        row for row in parsed if "serialization_anchor_center_error_m" in row
+    ]
     calibrated = [
         row for row in parsed if "calibration_expected_center_error_m" in row
     ]
@@ -415,6 +439,12 @@ def main() -> None:
         "mean_recorded_angle_mae": statistics.fmean(
             row["recorded_angle_mae"] for row in referenced
         ) if referenced else None,
+        "mean_serialization_anchor_center_error_m": statistics.fmean(
+            row["serialization_anchor_center_error_m"] for row in anchored
+        ) if anchored else None,
+        "mean_serialization_anchor_full_mae": statistics.fmean(
+            row["serialization_anchor_full_mae"] for row in anchored
+        ) if anchored else None,
         "mean_calibration_expected_center_error_m": statistics.fmean(
             row["calibration_expected_center_error_m"] for row in calibrated
         ) if calibrated else None,
