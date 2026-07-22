@@ -195,11 +195,11 @@ def main() -> None:
             else case
         )
         image_path = IMAGES / shown_case["image"]
-        focal_scale_sweep = config.get("focal_scale_sweep")
-        intrinsics_case = shown_case if focal_scale_sweep is not None else case
-        focal_scale = (
-            float(focal_scale_sweep[rank])
-            if focal_scale_sweep is not None
+        focal_y_scale_sweep = config.get("focal_y_scale_sweep")
+        intrinsics_case = shown_case if focal_y_scale_sweep is not None else case
+        focal_y_scale = (
+            float(focal_y_scale_sweep[rank])
+            if focal_y_scale_sweep is not None
             else 1.0
         )
         prompt_intrinsics = list(intrinsics_case["intrinsics"])
@@ -217,8 +217,8 @@ def main() -> None:
         center_representation = str(
             config.get("center_representation", "camera_xyz")
         )
-        prompt_intrinsics[0] *= intrinsics_scale * focal_scale
-        prompt_intrinsics[1] *= intrinsics_scale * focal_scale
+        prompt_intrinsics[0] *= intrinsics_scale
+        prompt_intrinsics[1] *= intrinsics_scale * focal_y_scale
         prompt_intrinsics = [value * image_scale for value in prompt_intrinsics]
         model_image_path = image_path
         with Image.open(image_path) as source_image:
@@ -263,7 +263,7 @@ def main() -> None:
             "shown_case_id": shown_case["id"],
             "shown_category": shown_case["category"],
             "prompt_intrinsics_case_id": intrinsics_case["id"],
-            "focal_scale": focal_scale,
+            "focal_y_scale": focal_y_scale,
             "model_id": config["model_id"],
         }
         started = time.perf_counter()
