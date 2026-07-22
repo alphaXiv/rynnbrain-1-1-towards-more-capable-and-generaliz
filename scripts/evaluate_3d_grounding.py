@@ -179,8 +179,13 @@ def main() -> None:
 
     rows: list[dict[str, object]] = []
     for rank, case in enumerate(cases):
-        image_path = IMAGES / case["image"]
-        prompt_intrinsics = list(case["intrinsics"])
+        fixed_image_case_id = config.get("fixed_image_case_id")
+        shown_case = next(
+            (candidate for candidate in cases if candidate["id"] == fixed_image_case_id),
+            case,
+        )
+        image_path = IMAGES / shown_case["image"]
+        prompt_intrinsics = list(shown_case["intrinsics"])
         intrinsics_scale = float(config.get("intrinsics_scale", 1.0))
         include_intrinsics = bool(config.get("include_intrinsics", True))
         white_frame = bool(config.get("white_frame", False))
@@ -238,6 +243,9 @@ def main() -> None:
             "rank": rank,
             "case_id": case["id"],
             "category": case["category"],
+            "shown_case_id": shown_case["id"],
+            "shown_category": shown_case["category"],
+            "fixed_image_case_id": fixed_image_case_id,
             "model_id": config["model_id"],
         }
         started = time.perf_counter()
@@ -353,8 +361,9 @@ def main() -> None:
                     for index in range(gpu_count)
                 ),
             })
-            reference = case.get("recorded_reference")
+            reference = shown_case.get("recorded_reference")
             if camera_boxes and reference is not None and coordinate_scale == 1.0:
+                result["reference_case_id"] = shown_case["id"]
                 result["recorded_reference"] = reference
                 result["recorded_center_error_m"] = math.dist(
                     camera_boxes[0][:3], reference[:3]
@@ -374,7 +383,7 @@ def main() -> None:
                     abs(camera_boxes[0][index] - serialization_example[index])
                     for index in range(9)
                 )
-            baseline = CALIBRATION_BASELINES.get(case["id"])
+            baseline = CALIBRATION_BASELINES.get(shown_case["id"])
             if camera_boxes and baseline is not None:
                 expected = [
                     coordinate_scale * x_axis_sign * baseline[0] / intrinsics_scale,
