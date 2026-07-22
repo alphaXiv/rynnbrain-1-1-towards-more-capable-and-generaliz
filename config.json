@@ -13,7 +13,7 @@
   "coordinate_scale": 1.0,
   "coordinate_units": "meters",
   "center_representation": "camera_xyz",
-  "fixed_image_case_id": "sunrgbd_chair",
+  "fixed_image_case_id": "sunrgbd_bed",
   "category_overrides": {
     "sunrgbd_chair": "chair",
     "sunrgbd_bed": "bed",
