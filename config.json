@@ -6,6 +6,8 @@
   "white_frame": false,
   "blur_radius": 0.0,
   "x_axis_sign": 1.0,
-  "y_axis_sign": -1.0,
+  "y_axis_sign": 1.0,
+  "coordinate_scale": 100.0,
+  "coordinate_units": "centimeters",
   "task": "native_3d_grounding"
 }

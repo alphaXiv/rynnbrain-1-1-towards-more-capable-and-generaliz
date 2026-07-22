@@ -58,6 +58,7 @@ def build_prompt(
     include_intrinsics: bool = True,
     x_direction: str = "right",
     y_direction: str = "downward",
+    coordinate_units: str = "meters",
 ) -> str:
     intrinsics_block = (
         f"The camera intrinsics matrix is:\n{format_intrinsics(intrinsics)}\n\n"
@@ -75,13 +76,13 @@ For each object, return:
 <3D Grounding> cx, cy, cz, x_size, y_size, z_size, pitch, yaw, roll </3D Grounding>
 
 Definitions:
-- cx, cy, cz: 3D coordinates of the box center in the camera coordinate system, in meters
-- x_size, y_size, z_size: box dimensions in the box local coordinate system, in meters
+- cx, cy, cz: 3D coordinates of the box center in the camera coordinate system, in {coordinate_units}
+- x_size, y_size, z_size: box dimensions in the box local coordinate system, in {coordinate_units}
 - pitch, yaw, roll: normalized rotations in the range [-1, 1], corresponding to [-180, 180] degrees
 
 Constraints:
 - x_size >= z_size
-- Use meters for cx, cy, cz, x_size, y_size, z_size
+- Use {coordinate_units} for cx, cy, cz, x_size, y_size, z_size
 - Use normalized values in [-1, 1] for pitch, yaw, roll
 <think>\n\n</think>\n\n"""
 
@@ -152,6 +153,8 @@ def main() -> None:
         blur_radius = float(config.get("blur_radius", 0.0))
         x_axis_sign = float(config.get("x_axis_sign", 1.0))
         y_axis_sign = float(config.get("y_axis_sign", 1.0))
+        coordinate_scale = float(config.get("coordinate_scale", 1.0))
+        coordinate_units = str(config.get("coordinate_units", "meters"))
         prompt_intrinsics[0] *= intrinsics_scale
         prompt_intrinsics[1] *= intrinsics_scale
         model_image_path = image_path
@@ -182,6 +185,7 @@ def main() -> None:
                 include_intrinsics,
                 "left" if x_axis_sign < 0 else "right",
                 "upward" if y_axis_sign < 0 else "downward",
+                coordinate_units,
             )
             conversation = [{
                 "role": "user",
@@ -238,6 +242,8 @@ def main() -> None:
                 "blur_radius": blur_radius,
                 "x_axis_sign": x_axis_sign,
                 "y_axis_sign": y_axis_sign,
+                "coordinate_scale": coordinate_scale,
+                "coordinate_units": coordinate_units,
                 "requested_category": requested_category,
                 "prompt_intrinsics": prompt_intrinsics,
                 "box_count": len(boxes),
@@ -252,7 +258,7 @@ def main() -> None:
                 ),
             })
             reference = case.get("recorded_reference")
-            if boxes and reference is not None:
+            if boxes and reference is not None and coordinate_scale == 1.0:
                 result["recorded_reference"] = reference
                 result["recorded_center_error_m"] = math.dist(
                     boxes[0][:3], reference[:3]
@@ -267,9 +273,9 @@ def main() -> None:
             baseline = CALIBRATION_BASELINES.get(case["id"])
             if boxes and baseline is not None:
                 expected = [
-                    x_axis_sign * baseline[0] / intrinsics_scale,
-                    y_axis_sign * baseline[1] / intrinsics_scale,
-                    baseline[2],
+                    coordinate_scale * x_axis_sign * baseline[0] / intrinsics_scale,
+                    coordinate_scale * y_axis_sign * baseline[1] / intrinsics_scale,
+                    coordinate_scale * baseline[2],
                 ]
                 result["calibration_baseline_center"] = baseline
                 result["calibration_expected_center"] = expected
