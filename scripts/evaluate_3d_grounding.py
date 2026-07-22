@@ -61,6 +61,7 @@ def build_prompt(
     coordinate_units: str = "meters",
     center_representation: str = "camera_xyz",
     serialization_example: list[float] | None = None,
+    repeat_constraints_last: bool = False,
 ) -> str:
     intrinsics_block = (
         f"The camera intrinsics matrix is:\n{format_intrinsics(intrinsics)}\n\n"
@@ -98,6 +99,13 @@ def build_prompt(
             f"<3D Grounding> {serialized} </3D Grounding>\n"
             "Return only tagged 3D Grounding boxes, never JSON or prose.\n"
         )
+    final_constraints = (
+        "\nFinal answer check: z must be positive; all three sizes must be positive; "
+        "x_size must be at least z_size; and pitch, yaw, roll must each be in "
+        "[-1, 1]. Enforce these constraints before answering.\n"
+        if repeat_constraints_last
+        else ""
+    )
     return f"""Find all {category} in this image.
 
 {intrinsics_block}Predict 3D bounding boxes in the camera coordinate system, where:
@@ -118,6 +126,7 @@ Constraints:
 - {units_constraint}
 - Use normalized values in [-1, 1] for pitch, yaw, roll
 {example}
+{final_constraints}
 <think>\n\n</think>\n\n"""
 
 
@@ -246,6 +255,9 @@ def main() -> None:
                 case["id"], case["category"]
             )
             serialization_example = config.get("serialization_example")
+            repeat_constraints_last = bool(
+                config.get("repeat_constraints_last", False)
+            )
             prompt = build_prompt(
                 requested_category,
                 prompt_intrinsics,
@@ -255,6 +267,7 @@ def main() -> None:
                 coordinate_units,
                 center_representation,
                 serialization_example,
+                repeat_constraints_last,
             )
             conversation = [{
                 "role": "user",
@@ -340,6 +353,7 @@ def main() -> None:
                 "coordinate_units": coordinate_units,
                 "center_representation": center_representation,
                 "serialization_example": serialization_example,
+                "repeat_constraints_last": repeat_constraints_last,
                 "requested_category": requested_category,
                 "prompt_intrinsics": prompt_intrinsics,
                 "box_count": len(boxes),
