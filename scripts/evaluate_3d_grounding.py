@@ -44,9 +44,9 @@ def parse_boxes(text: str) -> list[list[float]]:
     return boxes
 
 
-def format_intrinsics(values: list[float]) -> str:
+def format_intrinsics(values: list[float], homogeneous_scale: float = 1.0) -> str:
     fx, fy, cx, cy = values
-    rows = [[fx, 0.0, cx], [0.0, fy, cy], [0.0, 0.0, 1.0]]
+    rows = [[fx, 0.0, cx], [0.0, fy, cy], [0.0, 0.0, homogeneous_scale]]
     return "[" + ", ".join(
         "[" + ", ".join(f"{value:.2f}" for value in row) + "]" for row in rows
     ) + "]"
@@ -59,9 +59,10 @@ def build_prompt(
     include_intrinsics: bool = True,
     explicit_no_object: bool = False,
     serialization_template_only: bool = False,
+    intrinsics_homogeneous_scale: float = 1.0,
 ) -> str:
     intrinsics_block = (
-        f"The camera intrinsics matrix is:\n{format_intrinsics(intrinsics)}\n\n"
+        f"The camera intrinsics matrix is:\n{format_intrinsics(intrinsics, intrinsics_homogeneous_scale)}\n\n"
         if include_intrinsics
         else ""
     )
@@ -181,6 +182,9 @@ def main() -> None:
             if focal_scale_sweep is not None
             else 1.0
         )
+        homogeneous_intrinsics_sweep = bool(
+            config.get("homogeneous_intrinsics_sweep", False)
+        )
         prompt_intrinsics = list(intrinsics_case["intrinsics"])
         intrinsics_scale = float(config.get("intrinsics_scale", 1.0))
         include_intrinsics = bool(config.get("include_intrinsics", True))
@@ -188,6 +192,9 @@ def main() -> None:
         white_frame = bool(config.get("white_frame", False))
         prompt_intrinsics[0] *= intrinsics_scale * focal_scale
         prompt_intrinsics[1] *= intrinsics_scale * focal_scale
+        if homogeneous_intrinsics_sweep:
+            prompt_intrinsics[2] *= focal_scale
+            prompt_intrinsics[3] *= focal_scale
         model_image_path = image_path
         with Image.open(image_path) as source_image:
             image_size = source_image.size
@@ -203,6 +210,9 @@ def main() -> None:
             "cyclic_image": cyclic_image,
             "prompt_intrinsics_case_id": intrinsics_case["id"],
             "focal_scale": focal_scale,
+            "intrinsics_homogeneous_scale": (
+                focal_scale if homogeneous_intrinsics_sweep else 1.0
+            ),
             "model_id": config["model_id"],
         }
         started = time.perf_counter()
@@ -220,6 +230,7 @@ def main() -> None:
                 requested_category, prompt_intrinsics, serialization_example,
                 include_intrinsics, explicit_no_object,
                 serialization_template_only,
+                focal_scale if homogeneous_intrinsics_sweep else 1.0,
             )
             conversation = [{
                 "role": "user",
