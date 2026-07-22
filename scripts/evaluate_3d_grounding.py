@@ -135,8 +135,10 @@ def main() -> None:
         image_path = IMAGES / case["image"]
         prompt_intrinsics = list(case["intrinsics"])
         intrinsics_scale = float(config.get("intrinsics_scale", 1.0))
+        principal_point_dx = float(config.get("principal_point_dx", 0.0))
         prompt_intrinsics[0] *= intrinsics_scale
         prompt_intrinsics[1] *= intrinsics_scale
+        prompt_intrinsics[2] += principal_point_dx
         model_image_path = image_path
         with Image.open(image_path) as source_image:
             image_size = source_image.size
@@ -193,6 +195,7 @@ def main() -> None:
                 "response": response,
                 "boxes": boxes,
                 "intrinsics_scale": intrinsics_scale,
+                "principal_point_dx": principal_point_dx,
                 "prompt_intrinsics": prompt_intrinsics,
                 "box_count": len(boxes),
                 "format_valid": bool(boxes),
@@ -221,7 +224,10 @@ def main() -> None:
             baseline = CALIBRATION_BASELINES.get(case["id"])
             if boxes and baseline is not None:
                 expected = [
-                    baseline[0] / intrinsics_scale,
+                    baseline[0] / intrinsics_scale
+                    - principal_point_dx
+                    * baseline[2]
+                    / (case["intrinsics"][0] * intrinsics_scale),
                     baseline[1] / intrinsics_scale,
                     baseline[2],
                 ]
