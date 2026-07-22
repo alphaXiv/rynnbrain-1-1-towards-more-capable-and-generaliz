@@ -179,7 +179,13 @@ def main() -> None:
         swap_intrinsics_with_image = bool(
             config.get("swap_intrinsics_with_image", True)
         )
-        intrinsics_case = shown_case if swap_intrinsics_with_image else case
+        same_category_intrinsics_swap = bool(
+            config.get("same_category_intrinsics_swap", False)
+        )
+        if same_category_intrinsics_swap and case["id"] in SAME_CATEGORY_SWAPS:
+            intrinsics_case = cases_by_id[SAME_CATEGORY_SWAPS[case["id"]]]
+        else:
+            intrinsics_case = shown_case if swap_intrinsics_with_image else case
         prompt_intrinsics = list(intrinsics_case["intrinsics"])
         intrinsics_scale = float(config.get("intrinsics_scale", 1.0))
         include_intrinsics = bool(config.get("include_intrinsics", True))
@@ -202,6 +208,7 @@ def main() -> None:
             "cyclic_image": cyclic_image,
             "same_category_swapped": shown_case["id"] != case["id"],
             "prompt_intrinsics_case_id": intrinsics_case["id"],
+            "same_category_intrinsics_swapped": intrinsics_case["id"] != case["id"],
             "model_id": config["model_id"],
         }
         started = time.perf_counter()
