@@ -24,6 +24,15 @@ PATTERN = re.compile(
     r"(-?\d+(?:\.\d+)?)\s*</grasp\s+pose>",
     re.IGNORECASE,
 )
+TP_PLAN = {
+    "model.language_model.layers.*.self_attn.q_proj": "colwise",
+    "model.language_model.layers.*.self_attn.o_proj": "rowwise",
+    "model.language_model.layers.*.mlp.experts.gate_up_proj": "packed_colwise",
+    "model.language_model.layers.*.mlp.experts.down_proj": "rowwise",
+    "model.language_model.layers.*.mlp.shared_expert.gate_proj": "colwise",
+    "model.language_model.layers.*.mlp.shared_expert.up_proj": "colwise",
+    "model.language_model.layers.*.mlp.shared_expert.down_proj": "rowwise",
+}
 
 
 def parse_pose(text: str) -> tuple[float, float, float] | None:
@@ -69,7 +78,7 @@ def main() -> None:
         local_files_only=True,
         dtype=torch.bfloat16,
         attn_implementation="sdpa",
-        tp_plan="auto",
+        tp_plan=TP_PLAN,
     ).eval()
     if rank == 0:
         print(
