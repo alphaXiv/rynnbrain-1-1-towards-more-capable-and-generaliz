@@ -7,7 +7,7 @@
   "fixed_requested_category": "chair",
   "focal_scale_sweep": [0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 2.5, 3.0],
   "homogeneous_intrinsics_sweep": true,
-  "white_frame": false,
+  "white_frame": true,
   "blur_radius": 0.0,
   "grayscale_frame": false,
   "image_scale": 1.0,
