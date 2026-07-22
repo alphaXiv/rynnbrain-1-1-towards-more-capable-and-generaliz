@@ -133,6 +133,19 @@ def grayscale_case(case: dict[str, object], rank: int) -> dict[str, object]:
     return transformed
 
 
+def white_frame_case(case: dict[str, object], rank: int) -> dict[str, object]:
+    transformed = copy.deepcopy(case)
+    blank_images = []
+    for index, relative_path in enumerate(case["images"]):
+        source_path = ASSETS / relative_path
+        target_path = RESULTS / f"white-rank-{rank}-image-{index}.png"
+        with Image.open(source_path) as source_image:
+            Image.new("RGB", source_image.size, "white").save(target_path)
+        blank_images.append(str(target_path))
+    transformed["images"] = blank_images
+    return transformed
+
+
 def main() -> None:
     dist.init_process_group("nccl")
     rank = dist.get_rank()
@@ -160,6 +173,9 @@ def main() -> None:
     grayscale = bool(config.get("grayscale", False))
     if grayscale:
         case = grayscale_case(case, rank)
+    white_frame = bool(config.get("white_frame", False))
+    if white_frame:
+        case = white_frame_case(case, rank)
     result: dict[str, object] = {
         "rank": rank,
         "case_id": case["id"],
@@ -168,6 +184,7 @@ def main() -> None:
         "image_count": len(case["images"]),
         "horizontal_flip": horizontal_flip,
         "grayscale": grayscale,
+        "white_frame": white_frame,
     }
     started = time.perf_counter()
     try:
