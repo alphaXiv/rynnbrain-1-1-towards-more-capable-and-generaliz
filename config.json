@@ -1,5 +1,5 @@
 {
   "model_id": "Qwen/Qwen3.5-2B",
   "max_new_tokens": 128,
-  "query_suffix": "\nReturn exactly one grasp pose and no prose. A valid example with three numbers is: <grasp pose> (512, 384), 0.0 </grasp pose>. Now answer for the shown object using the same format, with normalized x,y in [0,1000] and one scalar theta in degrees."
+  "query_suffix": "\nReturn exactly one grasp pose and no prose. Two valid format examples are: <grasp pose> (512, 384), 0.0 </grasp pose> and <grasp pose> (256, 640), 90.0 </grasp pose>. These angles are only formatting examples: estimate theta from the shown object's orientation instead of copying either example. Use normalized x,y in [0,1000] and one scalar theta in degrees."
 }
