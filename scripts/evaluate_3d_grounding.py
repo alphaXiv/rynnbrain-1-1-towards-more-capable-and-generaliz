@@ -59,6 +59,7 @@ def build_prompt(
     include_intrinsics: bool = True,
     explicit_no_object: bool = False,
     serialization_template_only: bool = False,
+    defined_category: str | None = None,
 ) -> str:
     intrinsics_block = (
         f"The camera intrinsics matrix is:\n{format_intrinsics(intrinsics)}\n\n"
@@ -68,6 +69,12 @@ def build_prompt(
     absence_instruction = (
         f"If no {category} is visible, return exactly <no object> and do not invent a box.\n\n"
         if explicit_no_object
+        else ""
+    )
+    category_definition = (
+        f'For this request, "{category}" means the visual category '
+        f'"{defined_category}".\n\n'
+        if defined_category is not None
         else ""
     )
     example = ""
@@ -87,7 +94,7 @@ def build_prompt(
         )
     return f"""Find all {category} in this image.
 
-{absence_instruction}{intrinsics_block}Predict 3D bounding boxes in the camera coordinate system, where:
+{category_definition}{absence_instruction}{intrinsics_block}Predict 3D bounding boxes in the camera coordinate system, where:
 - x points to the right
 - y points downward
 - z points forward
@@ -196,10 +203,16 @@ def main() -> None:
             requested_category = config.get("category_overrides", {}).get(
                 case["id"], case["category"]
             )
+            defined_category = (
+                case["category"]
+                if config.get("define_requested_category", False)
+                else None
+            )
             prompt = build_prompt(
                 requested_category, prompt_intrinsics, serialization_example,
                 include_intrinsics, explicit_no_object,
                 serialization_template_only,
+                defined_category,
             )
             conversation = [{
                 "role": "user",
@@ -251,6 +264,7 @@ def main() -> None:
                 "explicit_no_object": explicit_no_object,
                 "white_frame": white_frame,
                 "requested_category": requested_category,
+                "defined_category": defined_category,
                 "prompt_intrinsics": prompt_intrinsics,
                 "box_count": len(boxes),
                 "format_valid": bool(boxes),
