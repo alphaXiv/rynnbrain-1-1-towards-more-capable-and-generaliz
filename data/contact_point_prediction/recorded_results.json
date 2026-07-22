@@ -1,0 +1,66 @@
+[
+  {
+    "id": "case_02_pen",
+    "group": "geometry",
+    "image_name": "pen_on_desk",
+    "image": "assets/contact_point_prediction/images/pen.png",
+    "query": "The robot needs to pick up the pen. Output the grasp pose.",
+    "pred": "The optimal grasping pose is <grasp pose> (529, 429), 66.7 </grasp pose>."
+  },
+  {
+    "id": "case_03_box",
+    "group": "geometry",
+    "image_name": "cardboard_box",
+    "image": "assets/contact_point_prediction/images/box.png",
+    "query": "Pick up the box and output the grasp pose.",
+    "pred": "I suggest the grasp pose <grasp pose> (476, 428), 92.6 </grasp pose> for stable grasping."
+  },
+  {
+    "id": "case_05_banana",
+    "group": "geometry",
+    "image_name": "banana",
+    "image": "assets/contact_point_prediction/images/banana.png",
+    "query": "The robot needs to pick up the banana. Output the grasp pose.",
+    "pred": "The grasp center and angle are <grasp pose> (447, 561), 179.4 </grasp pose>."
+  },
+  {
+    "id": "case_10_key",
+    "group": "geometry",
+    "image_name": "key_on_table",
+    "image": "assets/contact_point_prediction/images/key.png",
+    "query": "There is a small key on the table that needs to be retrieved. What grasp pose should be used?",
+    "pred": "The gripper pose for grasping the small key on the table is <grasp pose> (486, 488), 93.7 </grasp pose>."
+  },
+  {
+    "id": "case_04_mug_handle",
+    "group": "context",
+    "image_name": "mug_upright_handle",
+    "image": "assets/contact_point_prediction/images/mug_handle.png",
+    "query": "The robot needs to pick up the mug by its handle. Output the grasp pose.",
+    "pred": "The robot should grasp the mug at <grasp pose> (671, 465), 137.0 </grasp pose>."
+  },
+  {
+    "id": "case_06_tipped_mug",
+    "group": "context",
+    "image_name": "mug_tipped_over",
+    "image": "assets/contact_point_prediction/images/tipped_mug.png",
+    "query": "The mug has been knocked over on the counter. Pick it up and output the grasp pose.",
+    "pred": "A suitable grasp pose for this object is <grasp pose> (629, 550), 66.7 </grasp pose>."
+  },
+  {
+    "id": "case_07_red_cup",
+    "group": "context",
+    "image_name": "red_cup_and_bottle",
+    "image": "assets/contact_point_prediction/images/red_cup.png",
+    "query": "I want the red cup, not the bottle. Output the grasp pose for grasping it.",
+    "pred": "The recommended grasp pose for the red cup is <grasp pose> (351, 550), 166.4 </grasp pose>."
+  },
+  {
+    "id": "case_09_highlighter",
+    "group": "context",
+    "image_name": "cluttered_desk",
+    "image": "assets/contact_point_prediction/images/highlighter.png",
+    "query": "Among the items on the desk, pick up the highlighter. Output the grasp pose.",
+    "pred": "The optimal grasping pose for the highlighter is <grasp pose> (490, 661), 30.0 </grasp pose>."
+  }
+]

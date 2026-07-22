@@ -1,0 +1,58 @@
+[
+  {
+    "id": "case_02_pen",
+    "group": "geometry",
+    "image_name": "pen_on_desk",
+    "image": "assets/contact_point_prediction/images/pen.png",
+    "query": "The robot needs to pick up the pen. Output the grasp pose."
+  },
+  {
+    "id": "case_03_box",
+    "group": "geometry",
+    "image_name": "cardboard_box",
+    "image": "assets/contact_point_prediction/images/box.png",
+    "query": "Pick up the box and output the grasp pose."
+  },
+  {
+    "id": "case_05_banana",
+    "group": "geometry",
+    "image_name": "banana",
+    "image": "assets/contact_point_prediction/images/banana.png",
+    "query": "The robot needs to pick up the banana. Output the grasp pose."
+  },
+  {
+    "id": "case_10_key",
+    "group": "geometry",
+    "image_name": "key_on_table",
+    "image": "assets/contact_point_prediction/images/key.png",
+    "query": "There is a small key on the table that needs to be retrieved. What grasp pose should be used?"
+  },
+  {
+    "id": "case_04_mug_handle",
+    "group": "context",
+    "image_name": "mug_upright_handle",
+    "image": "assets/contact_point_prediction/images/mug_handle.png",
+    "query": "The robot needs to pick up the mug by its handle. Output the grasp pose."
+  },
+  {
+    "id": "case_06_tipped_mug",
+    "group": "context",
+    "image_name": "mug_tipped_over",
+    "image": "assets/contact_point_prediction/images/tipped_mug.png",
+    "query": "The mug has been knocked over on the counter. Pick it up and output the grasp pose."
+  },
+  {
+    "id": "case_07_red_cup",
+    "group": "context",
+    "image_name": "red_cup_and_bottle",
+    "image": "assets/contact_point_prediction/images/red_cup.png",
+    "query": "I want the red cup, not the bottle. Output the grasp pose for grasping it."
+  },
+  {
+    "id": "case_09_highlighter",
+    "group": "context",
+    "image_name": "cluttered_desk",
+    "image": "assets/contact_point_prediction/images/highlighter.png",
+    "query": "Among the items on the desk, pick up the highlighter. Output the grasp pose."
+  }
+]
