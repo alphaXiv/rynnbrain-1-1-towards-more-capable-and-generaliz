@@ -170,19 +170,19 @@ def main() -> None:
         else:
             shown_case = cases[(rank + 1) % len(cases)] if cyclic_image else case
         image_path = IMAGES / shown_case["image"]
-        principal_x_offset_sweep = config.get("principal_x_offset_sweep")
+        principal_y_offset_sweep = config.get("principal_y_offset_sweep")
         intrinsics_case = (
             shown_case
-            if principal_x_offset_sweep is not None
+            if principal_y_offset_sweep is not None
             else case if fixed_image_case_id is not None else shown_case
         )
-        principal_x_offset = (
-            float(principal_x_offset_sweep[rank])
-            if principal_x_offset_sweep is not None
+        principal_y_offset = (
+            float(principal_y_offset_sweep[rank])
+            if principal_y_offset_sweep is not None
             else 0.0
         )
         prompt_intrinsics = list(intrinsics_case["intrinsics"])
-        prompt_intrinsics[2] += principal_x_offset
+        prompt_intrinsics[3] += principal_y_offset
         intrinsics_scale = float(config.get("intrinsics_scale", 1.0))
         include_intrinsics = bool(config.get("include_intrinsics", True))
         explicit_no_object = bool(config.get("explicit_no_object", False))
@@ -203,7 +203,7 @@ def main() -> None:
             "shown_category": shown_case["category"],
             "cyclic_image": cyclic_image,
             "prompt_intrinsics_case_id": intrinsics_case["id"],
-            "principal_x_offset": principal_x_offset,
+            "principal_y_offset": principal_y_offset,
             "model_id": config["model_id"],
         }
         started = time.perf_counter()
