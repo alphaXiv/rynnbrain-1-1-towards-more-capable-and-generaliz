@@ -126,6 +126,7 @@ def main() -> None:
     prompt_intrinsics[2] += principal_point_dx
     prompt_intrinsics[3] += principal_point_dy
     horizontal_flip = bool(config.get("horizontal_flip", False))
+    vertical_flip = bool(config.get("vertical_flip", False))
     model_image_path = image_path
     with Image.open(image_path) as source_image:
         image_size = source_image.size
@@ -135,6 +136,12 @@ def main() -> None:
                 model_image_path
             )
             prompt_intrinsics[2] = image_size[0] - 1 - prompt_intrinsics[2]
+        elif vertical_flip:
+            model_image_path = RESULTS / f"vertical-flip-rank-{rank}.png"
+            source_image.transpose(Image.Transpose.FLIP_TOP_BOTTOM).save(
+                model_image_path
+            )
+            prompt_intrinsics[3] = image_size[1] - 1 - prompt_intrinsics[3]
     result: dict[str, object] = {
         "rank": rank,
         "case_id": case["id"],
@@ -194,6 +201,7 @@ def main() -> None:
             "principal_point_dx": principal_point_dx,
             "principal_point_dy": principal_point_dy,
             "horizontal_flip": horizontal_flip,
+            "vertical_flip": vertical_flip,
             "prompt_intrinsics": prompt_intrinsics,
             "box_count": len(boxes),
             "format_valid": bool(boxes),
@@ -228,6 +236,8 @@ def main() -> None:
             )
             if horizontal_flip:
                 expected[0] *= -1
+            if vertical_flip:
+                expected[1] *= -1
             result["calibration_baseline"] = baseline
             result["calibration_expected_center"] = expected[:3]
             result["calibration_expected_x_error_m"] = abs(
@@ -235,6 +245,12 @@ def main() -> None:
             )
             result["calibration_unflipped_x_error_m"] = abs(
                 boxes[0][0] - baseline[0]
+            )
+            result["calibration_expected_y_error_m"] = abs(
+                boxes[0][1] - expected[1]
+            )
+            result["calibration_unflipped_y_error_m"] = abs(
+                boxes[0][1] - baseline[1]
             )
             result["calibration_expected_center_error_m"] = math.dist(
                 boxes[0][:3], expected[:3]
@@ -292,6 +308,12 @@ def main() -> None:
             ) if calibrated else None,
             "mean_calibration_unflipped_x_error_m": statistics.fmean(
                 row["calibration_unflipped_x_error_m"] for row in calibrated
+            ) if calibrated else None,
+            "mean_calibration_expected_y_error_m": statistics.fmean(
+                row["calibration_expected_y_error_m"] for row in calibrated
+            ) if calibrated else None,
+            "mean_calibration_unflipped_y_error_m": statistics.fmean(
+                row["calibration_unflipped_y_error_m"] for row in calibrated
             ) if calibrated else None,
             "mean_inference_seconds": statistics.fmean(
                 row["inference_seconds"] for row in successes
