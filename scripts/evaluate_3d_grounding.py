@@ -62,7 +62,10 @@ def build_prompt(
     intrinsics_homogeneous_scale: float = 1.0,
 ) -> str:
     intrinsics_block = (
-        f"The camera intrinsics matrix is:\n{format_intrinsics(intrinsics, intrinsics_homogeneous_scale)}\n\n"
+        f"The camera intrinsics matrix is:\n{format_intrinsics(intrinsics, intrinsics_homogeneous_scale)}\n"
+        "Camera matrices are homogeneous: divide every matrix entry by the "
+        "bottom-right entry before using the intrinsics. Uniformly scaled "
+        "matrices describe exactly the same camera.\n\n"
         if include_intrinsics
         else ""
     )
