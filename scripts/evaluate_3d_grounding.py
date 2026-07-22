@@ -29,13 +29,22 @@ TAG_PATTERN = re.compile(
 NUMBER_PATTERN = re.compile(r"[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?")
 
 
-def parse_boxes(text: str) -> list[list[float]]:
+def parse_boxes(text: str) -> tuple[list[list[float]], str | None]:
     boxes: list[list[float]] = []
     for content in TAG_PATTERN.findall(text):
         values = [float(value) for value in NUMBER_PATTERN.findall(content)]
         if len(values) == 9:
             boxes.append(values)
-    return boxes
+    if boxes:
+        return boxes, "tagged"
+
+    for content in re.findall(
+        r'["\']bbox_3d["\']\s*:\s*\[([^\]]+)\]', text, re.IGNORECASE
+    ):
+        values = [float(value) for value in NUMBER_PATTERN.findall(content)]
+        if len(values) == 9:
+            boxes.append(values)
+    return boxes, "bbox_3d_json" if boxes else None
 
 
 def format_intrinsics(values: list[float]) -> str:
@@ -159,7 +168,7 @@ def main() -> None:
         torch.cuda.synchronize(device)
         output_ids = output_ids[:, inputs["input_ids"].shape[1] :]
         response = processor.decode(output_ids[0], skip_special_tokens=True)
-        boxes = parse_boxes(response)
+        boxes, output_format = parse_boxes(response)
         with Image.open(image_path) as image:
             image_size = image.size
         physical = bool(boxes and all(box_is_physical(box) for box in boxes))
@@ -175,7 +184,9 @@ def main() -> None:
             "response": response,
             "boxes": boxes,
             "box_count": len(boxes),
-            "format_valid": bool(boxes),
+            "format_valid": output_format == "tagged",
+            "semantic_format_valid": bool(boxes),
+            "output_format": output_format,
             "physical_valid": physical,
             "projection_valid": projected,
             "inference_seconds": time.perf_counter() - inference_started,
@@ -205,7 +216,8 @@ def main() -> None:
         for row in rows:
             print("THREED_CASE_RESULT " + json.dumps(row, sort_keys=True), flush=True)
         successes = [row for row in rows if "error" not in row]
-        parsed = [row for row in successes if row.get("format_valid")]
+        strict = [row for row in successes if row.get("format_valid")]
+        parsed = [row for row in successes if row.get("semantic_format_valid")]
         physical = [row for row in successes if row.get("physical_valid")]
         projected = [row for row in successes if row.get("projection_valid")]
         referenced = [row for row in parsed if "recorded_center_error_m" in row]
@@ -213,7 +225,8 @@ def main() -> None:
             "model_id": config["model_id"],
             "cases": len(rows),
             "worker_successes": len(successes),
-            "format_valid_rate": len(parsed) / len(rows),
+            "format_valid_rate": len(strict) / len(rows),
+            "semantic_format_valid_rate": len(parsed) / len(rows),
             "physical_valid_rate": len(physical) / len(rows),
             "projection_valid_rate": len(projected) / len(rows),
             "mean_box_count": statistics.fmean(row["box_count"] for row in successes),
