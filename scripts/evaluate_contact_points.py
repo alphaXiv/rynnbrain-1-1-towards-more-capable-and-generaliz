@@ -15,6 +15,7 @@ from pathlib import Path
 import torch
 import torch.distributed as dist
 from huggingface_hub import snapshot_download
+from PIL import Image
 from transformers import AutoModelForImageTextToText, AutoProcessor
 
 
@@ -37,6 +38,29 @@ def circular_gripper_error(a: float, b: float) -> float:
     """Smallest angular difference under a parallel-jaw gripper's 180° symmetry."""
     raw = abs(a - b) % 180.0
     return min(raw, 180.0 - raw)
+
+
+def prepare_image_and_reference(
+    case: dict[str, object],
+    reference: tuple[float, float, float] | None,
+    transform: str | None,
+    rank: int,
+) -> tuple[Path, tuple[float, float, float] | None]:
+    image_path = DATA / str(case["image"])
+    if transform is None:
+        return image_path, reference
+    if transform != "horizontal_flip":
+        raise ValueError(f"unsupported image_transform={transform!r}")
+
+    transformed_dir = Path("/tmp/rynnbrain-transformed-inputs")
+    transformed_dir.mkdir(parents=True, exist_ok=True)
+    transformed_path = transformed_dir / f"rank-{rank}.png"
+    with Image.open(image_path) as image:
+        image.convert("RGB").transpose(Image.Transpose.FLIP_LEFT_RIGHT).save(transformed_path)
+    if reference is not None:
+        x, y, theta = reference
+        reference = (1000.0 - x, y, (180.0 - theta) % 180.0)
+    return transformed_path, reference
 
 
 def main() -> None:
@@ -83,10 +107,14 @@ def main() -> None:
             attn_implementation="sdpa",
         ).to(device).eval()
         evaluated_query = case["query"] + config.get("query_suffix", "")
+        ref_pose = parse_pose(references[case["id"]]["pred"])
+        image_path, ref_pose = prepare_image_and_reference(
+            case, ref_pose, config.get("image_transform"), rank
+        )
         conversation = [{
             "role": "user",
             "content": [
-                {"type": "image", "image": str(DATA / case["image"])},
+                {"type": "image", "image": str(image_path)},
                 {"type": "text", "text": evaluated_query},
             ],
         }]
@@ -110,11 +138,11 @@ def main() -> None:
         output_ids = output_ids[:, inputs["input_ids"].shape[1] :]
         response = processor.decode(output_ids[0], skip_special_tokens=True)
         pose = parse_pose(response)
-        ref_pose = parse_pose(references[case["id"]]["pred"])
         valid = pose is not None and all(math.isfinite(x) for x in pose)
         in_bounds = bool(valid and 0 <= pose[0] <= 1000 and 0 <= pose[1] <= 1000)
         result.update({
             "query": evaluated_query,
+            "image_transform": config.get("image_transform"),
             "response": response,
             "pose": pose,
             "reference_pose": ref_pose,
