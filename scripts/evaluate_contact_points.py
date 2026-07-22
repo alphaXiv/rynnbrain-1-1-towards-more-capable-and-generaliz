@@ -82,11 +82,12 @@ def main() -> None:
             dtype=torch.bfloat16,
             attn_implementation="sdpa",
         ).to(device).eval()
+        evaluated_query = case["query"] + config.get("query_suffix", "")
         conversation = [{
             "role": "user",
             "content": [
                 {"type": "image", "image": str(DATA / case["image"])},
-                {"type": "text", "text": case["query"]},
+                {"type": "text", "text": evaluated_query},
             ],
         }]
         inputs = processor.apply_chat_template(
@@ -113,6 +114,7 @@ def main() -> None:
         valid = pose is not None and all(math.isfinite(x) for x in pose)
         in_bounds = bool(valid and 0 <= pose[0] <= 1000 and 0 <= pose[1] <= 1000)
         result.update({
+            "query": evaluated_query,
             "response": response,
             "pose": pose,
             "reference_pose": ref_pose,
