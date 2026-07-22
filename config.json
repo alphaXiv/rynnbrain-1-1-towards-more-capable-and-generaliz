@@ -1,5 +1,5 @@
 {
-  "model_id": "Qwen/Qwen3.5-9B",
+  "model_id": "Qwen/Qwen3.5-122B-A10B",
   "max_new_tokens": 128,
   "query_suffix": "\nReturn only one pose in exactly this format: <grasp pose> (x, y), theta </grasp pose>. Use normalized image coordinates x and y in [0, 1000] and theta in degrees."
 }
