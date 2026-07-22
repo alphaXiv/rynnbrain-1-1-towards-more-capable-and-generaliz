@@ -33,6 +33,12 @@ CALIBRATION_BASELINES = {
     "lounge_table": [0.19, 0.08, 1.88],
     "manipulation_bottle": [0.01, -0.03, 0.75],
 }
+SAME_CATEGORY_SWAPS = {
+    "sunrgbd_chair": "office_chairs",
+    "office_chairs": "sunrgbd_chair",
+    "sunrgbd_table": "lounge_table",
+    "lounge_table": "sunrgbd_table",
+}
 
 
 def parse_boxes(text: str) -> list[list[float]]:
@@ -138,6 +144,7 @@ def main() -> None:
     input_device = torch.device("cuda:0")
     config = json.loads((ROOT / "config.json").read_text())
     cases = json.loads((DATA / "test_cases.json").read_text())
+    cases_by_id = {case["id"]: case for case in cases}
     model_dir = Path("/tmp/model-snapshot")
     print(f"Downloading immutable snapshot for {config['model_id']}", flush=True)
     snapshot_download(repo_id=config["model_id"], local_dir=model_dir, max_workers=32)
@@ -163,7 +170,11 @@ def main() -> None:
     rows: list[dict[str, object]] = []
     for rank, case in enumerate(cases):
         cyclic_image = bool(config.get("cyclic_image", False))
-        shown_case = cases[(rank + 1) % len(cases)] if cyclic_image else case
+        same_category_swap = bool(config.get("same_category_swap", False))
+        if same_category_swap and case["id"] in SAME_CATEGORY_SWAPS:
+            shown_case = cases_by_id[SAME_CATEGORY_SWAPS[case["id"]]]
+        else:
+            shown_case = cases[(rank + 1) % len(cases)] if cyclic_image else case
         image_path = IMAGES / shown_case["image"]
         prompt_intrinsics = list(shown_case["intrinsics"])
         intrinsics_scale = float(config.get("intrinsics_scale", 1.0))
@@ -185,6 +196,7 @@ def main() -> None:
             "shown_case_id": shown_case["id"],
             "shown_category": shown_case["category"],
             "cyclic_image": cyclic_image,
+            "same_category_swapped": shown_case["id"] != case["id"],
             "model_id": config["model_id"],
         }
         started = time.perf_counter()
@@ -333,6 +345,10 @@ def main() -> None:
     shown_referenced = [
         row for row in parsed if "shown_image_reference_center_error_m" in row
     ]
+    swapped_referenced = [
+        row for row in shown_referenced
+        if row.get("same_category_swapped") and "recorded_center_error_m" in row
+    ]
     anchored = [
         row for row in parsed if "serialization_anchor_center_error_m" in row
     ]
@@ -360,6 +376,12 @@ def main() -> None:
         "mean_shown_image_reference_center_error_m": statistics.fmean(
             row["shown_image_reference_center_error_m"] for row in shown_referenced
         ) if shown_referenced else None,
+        "mean_swapped_original_reference_center_error_m": statistics.fmean(
+            row["recorded_center_error_m"] for row in swapped_referenced
+        ) if swapped_referenced else None,
+        "mean_swapped_shown_reference_center_error_m": statistics.fmean(
+            row["shown_image_reference_center_error_m"] for row in swapped_referenced
+        ) if swapped_referenced else None,
         "mean_serialization_anchor_center_error_m": statistics.fmean(
             row["serialization_anchor_center_error_m"] for row in anchored
         ) if anchored else None,
