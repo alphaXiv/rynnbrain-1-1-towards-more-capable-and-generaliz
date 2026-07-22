@@ -52,13 +52,17 @@ def format_intrinsics(values: list[float]) -> str:
     ) + "]"
 
 
-def build_prompt(category: str, intrinsics: list[float]) -> str:
+def build_prompt(
+    category: str, intrinsics: list[float], include_intrinsics: bool = True
+) -> str:
+    intrinsics_block = (
+        f"The camera intrinsics matrix is:\n{format_intrinsics(intrinsics)}\n\n"
+        if include_intrinsics
+        else ""
+    )
     return f"""Find all {category} in this image.
 
-The camera intrinsics matrix is:
-{format_intrinsics(intrinsics)}
-
-Predict 3D bounding boxes in the camera coordinate system, where:
+{intrinsics_block}Predict 3D bounding boxes in the camera coordinate system, where:
 - x points to the right
 - y points downward
 - z points forward
@@ -135,6 +139,7 @@ def main() -> None:
         image_path = IMAGES / case["image"]
         prompt_intrinsics = list(case["intrinsics"])
         intrinsics_scale = float(config.get("intrinsics_scale", 1.0))
+        include_intrinsics = bool(config.get("include_intrinsics", True))
         prompt_intrinsics[0] *= intrinsics_scale
         prompt_intrinsics[1] *= intrinsics_scale
         model_image_path = image_path
@@ -148,7 +153,9 @@ def main() -> None:
         }
         started = time.perf_counter()
         try:
-            prompt = build_prompt(case["category"], prompt_intrinsics)
+            prompt = build_prompt(
+                case["category"], prompt_intrinsics, include_intrinsics
+            )
             conversation = [{
                 "role": "user",
                 "content": [
@@ -193,6 +200,7 @@ def main() -> None:
                 "response": response,
                 "boxes": boxes,
                 "intrinsics_scale": intrinsics_scale,
+                "include_intrinsics": include_intrinsics,
                 "prompt_intrinsics": prompt_intrinsics,
                 "box_count": len(boxes),
                 "format_valid": bool(boxes),
