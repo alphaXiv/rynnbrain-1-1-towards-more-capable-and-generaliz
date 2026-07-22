@@ -1,5 +1,6 @@
 {
   "model_id": "Qwen/Qwen3.5-2B",
   "max_new_tokens": 512,
+  "serialization_example": [0.12, 0.08, 1.23, 0.80, 0.60, 0.40, 0.0, 0.0, 0.0],
   "task": "native_3d_grounding"
 }
