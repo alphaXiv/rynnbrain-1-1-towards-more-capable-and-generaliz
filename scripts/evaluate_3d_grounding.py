@@ -155,7 +155,14 @@ def main() -> None:
     rows: list[dict[str, object]] = []
     for rank, case in enumerate(cases):
         cyclic_image = bool(config.get("cyclic_image", False))
-        shown_case = cases[(rank + 1) % len(cases)] if cyclic_image else case
+        fixed_image_case_id = config.get("fixed_image_case_id")
+        if fixed_image_case_id:
+            shown_case = next(
+                candidate for candidate in cases
+                if candidate["id"] == fixed_image_case_id
+            )
+        else:
+            shown_case = cases[(rank + 1) % len(cases)] if cyclic_image else case
         image_path = IMAGES / shown_case["image"]
         prompt_intrinsics = list(shown_case["intrinsics"])
         intrinsics_scale = float(config.get("intrinsics_scale", 1.0))
@@ -177,6 +184,7 @@ def main() -> None:
             "shown_case_id": shown_case["id"],
             "shown_category": shown_case["category"],
             "cyclic_image": cyclic_image,
+            "fixed_image_case_id": fixed_image_case_id,
             "model_id": config["model_id"],
         }
         started = time.perf_counter()
@@ -250,8 +258,9 @@ def main() -> None:
                     for index in range(gpu_count)
                 ),
             })
-            reference = case.get("recorded_reference")
+            reference = shown_case.get("recorded_reference") if fixed_image_case_id else case.get("recorded_reference")
             if boxes and reference is not None:
+                result["reference_case_id"] = shown_case["id"] if fixed_image_case_id else case["id"]
                 result["recorded_reference"] = reference
                 result["recorded_center_error_m"] = math.dist(
                     boxes[0][:3], reference[:3]
@@ -276,7 +285,7 @@ def main() -> None:
                     abs(boxes[0][index] - serialization_example[index])
                     for index in range(9)
                 )
-            baseline = CALIBRATION_BASELINES.get(case["id"])
+            baseline = CALIBRATION_BASELINES.get(shown_case["id"] if fixed_image_case_id else case["id"])
             if boxes and baseline is not None:
                 expected = [
                     baseline[0] / intrinsics_scale,
