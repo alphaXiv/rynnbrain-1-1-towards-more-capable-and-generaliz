@@ -47,6 +47,7 @@ def prepare_image_and_reference(
         "inset_letterbox_0.8",
         "rotate_90_cw",
         "center_crop_1.25",
+        "shift_right_0.1",
     }:
         raise ValueError(f"unsupported image_transform={transform!r}")
 
@@ -65,7 +66,7 @@ def prepare_image_and_reference(
             canvas.save(transformed_path)
         elif transform == "rotate_90_cw":
             source.transpose(Image.Transpose.ROTATE_270).save(transformed_path)
-        else:
+        elif transform == "center_crop_1.25":
             width, height = source.size
             scaled = source.resize(
                 (round(width * 1.25), round(height * 1.25)), Image.Resampling.LANCZOS
@@ -73,14 +74,22 @@ def prepare_image_and_reference(
             left = (scaled.width - width) // 2
             top = (scaled.height - height) // 2
             scaled.crop((left, top, left + width, top + height)).save(transformed_path)
+        else:
+            width, height = source.size
+            canvas = Image.new("RGB", (width, height), "white")
+            canvas.paste(source, (round(width * 0.1), 0))
+            canvas.save(transformed_path)
     if reference is not None:
         x, y, theta = reference
         if transform == "inset_letterbox_0.8":
             reference = (100.0 + 0.8 * x, 100.0 + 0.8 * y, theta)
         elif transform == "rotate_90_cw":
             reference = (1000.0 - y, x, (theta + 90.0) % 180.0)
-        else:
+        elif transform == "center_crop_1.25":
             reference = (1.25 * x - 125.0, 1.25 * y - 125.0, theta)
+        else:
+            shift_normalized = 1000.0 * round(width * 0.1) / width
+            reference = (x + shift_normalized, y, theta)
     return transformed_path, reference
 
 
