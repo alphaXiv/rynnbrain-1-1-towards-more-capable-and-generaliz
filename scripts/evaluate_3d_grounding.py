@@ -269,6 +269,7 @@ def main() -> None:
             repeat_constraints_last = bool(
                 config.get("repeat_constraints_last", False)
             )
+            enable_thinking = bool(config.get("enable_thinking", False))
             prompt = build_prompt(
                 requested_category,
                 prompt_intrinsics,
@@ -291,7 +292,7 @@ def main() -> None:
             inputs = processor.apply_chat_template(
                 conversation,
                 add_generation_prompt=True,
-                enable_thinking=False,
+                enable_thinking=enable_thinking,
                 tokenize=True,
                 return_dict=True,
                 return_tensors="pt",
@@ -367,6 +368,7 @@ def main() -> None:
                 "serialization_example": serialization_example,
                 "serialization_template_only": serialization_template_only,
                 "repeat_constraints_last": repeat_constraints_last,
+                "enable_thinking": enable_thinking,
                 "requested_category": requested_category,
                 "prompt_intrinsics": prompt_intrinsics,
                 "box_count": len(boxes),
