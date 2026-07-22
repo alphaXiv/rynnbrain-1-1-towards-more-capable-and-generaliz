@@ -3,18 +3,9 @@
   "max_new_tokens": 512,
   "intrinsics_scale": 1.0,
   "include_intrinsics": true,
-  "explicit_no_object": true,
+  "explicit_no_object": false,
+  "cyclic_image": true,
   "white_frame": false,
-  "category_overrides": {
-    "sunrgbd_chair": "bed",
-    "sunrgbd_bed": "bottle",
-    "sunrgbd_table": "car",
-    "driving_cars": "sofa",
-    "office_chairs": "bottle",
-    "lounge_sofa": "car",
-    "lounge_table": "bottle",
-    "manipulation_bottle": "bed"
-  },
   "task": "native_3d_grounding",
   "serialization_example": [-0.15, 0.05, 1.45, 0.72, 1.0, 0.68, 0.28, 0.15, 0.17]
 }
