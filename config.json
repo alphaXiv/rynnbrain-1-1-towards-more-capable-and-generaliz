@@ -4,8 +4,8 @@
   "intrinsics_scale": 1.0,
   "include_intrinsics": true,
   "explicit_no_object": false,
-  "cyclic_image": true,
+  "cyclic_image": false,
   "white_frame": false,
   "task": "native_3d_grounding",
-  "serialization_example": [-0.15, 0.05, 1.45, 0.72, 1.0, 0.68, 0.28, 0.15, 0.17]
+  "serialization_example": [1.25, -0.75, 6.0, 2.4, 1.8, 1.1, -0.6, 0.7, -0.5]
 }
