@@ -15,4 +15,4 @@ print(f"torch={torch.__version__} cuda={torch.version.cuda} gpu_count={torch.cud
 assert torch.cuda.device_count() == 8, "benchmark contract requires exactly 8 visible GPUs"
 PY
 
-torchrun --standalone --nnodes=1 --nproc-per-node=8 scripts/evaluate_localization_suite.py
+python scripts/evaluate_localization_suite_sharded.py
