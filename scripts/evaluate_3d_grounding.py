@@ -48,7 +48,7 @@ def format_intrinsics(values: list[float]) -> str:
     fx, fy, cx, cy = values
     rows = [[fx, 0.0, cx], [0.0, fy, cy], [0.0, 0.0, 1.0]]
     return "[" + ", ".join(
-        "[" + ", ".join(f"{value:.2e}" for value in row) + "]" for row in rows
+        "[" + ", ".join(f"{value:.5e}" for value in row) + "]" for row in rows
     ) + "]"
 
 
