@@ -114,9 +114,11 @@ def main() -> None:
         torch.cuda.synchronize(device)
         started = time.perf_counter()
         with torch.inference_mode():
+            fixed_new_tokens = int(config["max_new_tokens"])
             output_ids = model.generate(
                 **inputs,
-                max_new_tokens=int(config["max_new_tokens"]),
+                min_new_tokens=fixed_new_tokens,
+                max_new_tokens=fixed_new_tokens,
                 do_sample=False,
             )
         torch.cuda.synchronize(device)
