@@ -2,6 +2,7 @@
   "model_id": "Qwen/Qwen3.5-122B-A10B",
   "max_new_tokens": 1024,
   "enable_thinking": true,
+  "reasoning_cue": true,
   "intrinsics_scale": 1.0,
   "include_intrinsics": true,
   "repeat_constraints_last": true,
