@@ -14,9 +14,11 @@ from transformers import AutoModelForImageTextToText, AutoProcessor
 
 from evaluate_localization_suite import (
     DATA,
+    RESULTS,
     ROOT,
     bbox_iou,
     build_content,
+    grayscale_case,
     parse_response,
     point_chamfer,
     point_count_valid,
@@ -54,7 +56,10 @@ def main() -> None:
     )
 
     rows: list[dict[str, object]] = []
-    for case in cases:
+    RESULTS.mkdir(parents=True, exist_ok=True)
+    for rank, source_case in enumerate(cases):
+        grayscale = bool(config.get("grayscale", False))
+        case = grayscale_case(source_case, rank) if grayscale else source_case
         conversation = [{"role": "user", "content": build_content(case)}]
         inputs = processor.apply_chat_template(
             conversation,
@@ -99,6 +104,7 @@ def main() -> None:
             "task": case["task"],
             "model_id": config["model_id"],
             "image_count": len(case["images"]),
+            "grayscale": grayscale,
             "instruction": case["instruction"],
             "response": response,
             "points": points,
