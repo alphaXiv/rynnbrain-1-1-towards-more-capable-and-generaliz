@@ -58,6 +58,7 @@ def build_prompt(
     serialization_example: list[float] | None = None,
     include_intrinsics: bool = True,
     explicit_no_object: bool = False,
+    repeat_constraints_last: bool = False,
 ) -> str:
     intrinsics_block = (
         f"The camera intrinsics matrix is:\n{format_intrinsics(intrinsics)}\n\n"
@@ -77,6 +78,13 @@ def build_prompt(
             f"<3D Grounding> {serialized} </3D Grounding>\n"
             "Return only tagged 3D Grounding boxes, never JSON or prose.\n"
         )
+    final_constraints = (
+        "\nFinal answer check: z must be positive; all three sizes must be positive; "
+        "x_size must be at least z_size; and pitch, yaw, roll must each be in "
+        "[-1, 1]. Enforce these constraints before answering.\n"
+        if repeat_constraints_last
+        else ""
+    )
     return f"""Find all {category} in this image.
 
 {absence_instruction}{intrinsics_block}Predict 3D bounding boxes in the camera coordinate system, where:
@@ -97,6 +105,7 @@ Constraints:
 - Use meters for cx, cy, cz, x_size, y_size, z_size
 - Use normalized values in [-1, 1] for pitch, yaw, roll
 {example}
+{final_constraints}
 <think>\n\n</think>\n\n"""
 
 
@@ -182,12 +191,16 @@ def main() -> None:
         started = time.perf_counter()
         try:
             serialization_example = config.get("serialization_example")
+            repeat_constraints_last = bool(
+                config.get("repeat_constraints_last", False)
+            )
             requested_category = config.get("category_overrides", {}).get(
                 case["id"], case["category"]
             )
             prompt = build_prompt(
                 requested_category, prompt_intrinsics, serialization_example,
-                include_intrinsics, explicit_no_object
+                include_intrinsics, explicit_no_object,
+                repeat_constraints_last,
             )
             conversation = [{
                 "role": "user",
@@ -233,6 +246,7 @@ def main() -> None:
                 "response": response,
                 "boxes": boxes,
                 "serialization_example": serialization_example,
+                "repeat_constraints_last": repeat_constraints_last,
                 "intrinsics_scale": intrinsics_scale,
                 "include_intrinsics": include_intrinsics,
                 "explicit_no_object": explicit_no_object,
