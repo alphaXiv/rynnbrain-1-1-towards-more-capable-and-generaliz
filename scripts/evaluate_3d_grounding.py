@@ -58,16 +58,23 @@ def build_prompt(
     serialization_example: list[float] | None = None,
     include_intrinsics: bool = True,
     explicit_no_object: bool = False,
+    no_object_instruction_position: str = "before",
 ) -> str:
     intrinsics_block = (
         f"The camera intrinsics matrix is:\n{format_intrinsics(intrinsics)}\n\n"
         if include_intrinsics
         else ""
     )
-    absence_instruction = (
+    absence_text = (
         f"If no {category} is visible, return exactly <no object> and do not invent a box.\n\n"
         if explicit_no_object
         else ""
+    )
+    absence_instruction = (
+        absence_text if no_object_instruction_position != "last" else ""
+    )
+    final_absence_instruction = (
+        "\n" + absence_text if no_object_instruction_position == "last" else ""
     )
     example = ""
     if serialization_example is not None:
@@ -97,6 +104,7 @@ Constraints:
 - Use meters for cx, cy, cz, x_size, y_size, z_size
 - Use normalized values in [-1, 1] for pitch, yaw, roll
 {example}
+{final_absence_instruction}
 <think>\n\n</think>\n\n"""
 
 
@@ -159,6 +167,9 @@ def main() -> None:
         intrinsics_scale = float(config.get("intrinsics_scale", 1.0))
         include_intrinsics = bool(config.get("include_intrinsics", True))
         explicit_no_object = bool(config.get("explicit_no_object", False))
+        no_object_instruction_position = str(
+            config.get("no_object_instruction_position", "before")
+        )
         white_frame = bool(config.get("white_frame", False))
         prompt_intrinsics[0] *= intrinsics_scale
         prompt_intrinsics[1] *= intrinsics_scale
@@ -182,7 +193,8 @@ def main() -> None:
             )
             prompt = build_prompt(
                 requested_category, prompt_intrinsics, serialization_example,
-                include_intrinsics, explicit_no_object
+                include_intrinsics, explicit_no_object,
+                no_object_instruction_position,
             )
             conversation = [{
                 "role": "user",
@@ -231,6 +243,7 @@ def main() -> None:
                 "intrinsics_scale": intrinsics_scale,
                 "include_intrinsics": include_intrinsics,
                 "explicit_no_object": explicit_no_object,
+                "no_object_instruction_position": no_object_instruction_position,
                 "white_frame": white_frame,
                 "requested_category": requested_category,
                 "prompt_intrinsics": prompt_intrinsics,
