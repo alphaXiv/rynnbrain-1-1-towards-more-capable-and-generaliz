@@ -15,4 +15,4 @@ print(f"torch={torch.__version__} cuda={torch.version.cuda} gpu_count={torch.cud
 assert torch.cuda.device_count() == 8, "benchmark contract requires exactly 8 visible GPUs"
 PY
 
-python scripts/evaluate_contact_points_tp.py
+python scripts/evaluate_3d_grounding.py
