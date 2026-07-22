@@ -64,11 +64,16 @@ def build_prompt(
     serialization_template_only: bool = False,
     intrinsics_homogeneous_scale: float = 1.0,
 ) -> str:
+    normalized_intrinsics = [
+        value / intrinsics_homogeneous_scale for value in intrinsics
+    ]
     intrinsics_block = (
         f"The camera intrinsics matrix is:\n{format_intrinsics(intrinsics, intrinsics_homogeneous_scale)}\n"
         "Camera matrices are homogeneous: divide every matrix entry by the "
         "bottom-right entry before using the intrinsics. Uniformly scaled "
-        "matrices describe exactly the same camera.\n\n"
+        "matrices describe exactly the same camera.\n"
+        "Use this normalized camera matrix:\n"
+        f"{format_intrinsics(normalized_intrinsics)}\n\n"
         if include_intrinsics
         else ""
     )
