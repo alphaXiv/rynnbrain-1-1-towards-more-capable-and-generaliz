@@ -242,8 +242,13 @@ def main() -> None:
         }
         started = time.perf_counter()
         try:
-            requested_category = config.get("category_overrides", {}).get(
-                case["id"], case["category"]
+            generic_query = bool(config.get("generic_query", False))
+            requested_category = (
+                "the main foreground object"
+                if generic_query
+                else config.get("category_overrides", {}).get(
+                    case["id"], case["category"]
+                )
             )
             serialization_example = config.get("serialization_example")
             prompt = build_prompt(
@@ -340,6 +345,7 @@ def main() -> None:
                 "coordinate_units": coordinate_units,
                 "center_representation": center_representation,
                 "serialization_example": serialization_example,
+                "generic_query": generic_query,
                 "requested_category": requested_category,
                 "prompt_intrinsics": prompt_intrinsics,
                 "box_count": len(boxes),
