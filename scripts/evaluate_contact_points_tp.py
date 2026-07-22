@@ -43,7 +43,7 @@ def prepare_image_and_reference(
     image_path = DATA / str(case["image"])
     if transform is None:
         return image_path, reference
-    if transform != "inset_letterbox_0.8":
+    if transform not in {"inset_letterbox_0.8", "rotate_90_cw"}:
         raise ValueError(f"unsupported image_transform={transform!r}")
 
     transformed_dir = Path("/tmp/rynnbrain-transformed-inputs")
@@ -51,16 +51,22 @@ def prepare_image_and_reference(
     transformed_path = transformed_dir / f"{case['id']}.png"
     with Image.open(image_path) as source:
         source = source.convert("RGB")
-        width, height = source.size
-        scaled = source.resize(
-            (round(width * 0.8), round(height * 0.8)), Image.Resampling.LANCZOS
-        )
-        canvas = Image.new("RGB", (width, height), "white")
-        canvas.paste(scaled, ((width - scaled.width) // 2, (height - scaled.height) // 2))
-        canvas.save(transformed_path)
+        if transform == "inset_letterbox_0.8":
+            width, height = source.size
+            scaled = source.resize(
+                (round(width * 0.8), round(height * 0.8)), Image.Resampling.LANCZOS
+            )
+            canvas = Image.new("RGB", (width, height), "white")
+            canvas.paste(scaled, ((width - scaled.width) // 2, (height - scaled.height) // 2))
+            canvas.save(transformed_path)
+        else:
+            source.transpose(Image.Transpose.ROTATE_270).save(transformed_path)
     if reference is not None:
         x, y, theta = reference
-        reference = (100.0 + 0.8 * x, 100.0 + 0.8 * y, theta)
+        if transform == "inset_letterbox_0.8":
+            reference = (100.0 + 0.8 * x, 100.0 + 0.8 * y, theta)
+        else:
+            reference = (1000.0 - y, x, (theta + 90.0) % 180.0)
     return transformed_path, reference
 
 
