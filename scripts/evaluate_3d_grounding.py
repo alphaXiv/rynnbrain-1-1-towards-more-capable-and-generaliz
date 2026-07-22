@@ -138,6 +138,7 @@ def main() -> None:
     input_device = torch.device("cuda:0")
     config = json.loads((ROOT / "config.json").read_text())
     cases = json.loads((DATA / "test_cases.json").read_text())
+    cases_by_id = {case["id"]: case for case in cases}
     model_dir = Path("/tmp/model-snapshot")
     print(f"Downloading immutable snapshot for {config['model_id']}", flush=True)
     snapshot_download(repo_id=config["model_id"], local_dir=model_dir, max_workers=32)
@@ -163,9 +164,14 @@ def main() -> None:
     rows: list[dict[str, object]] = []
     for rank, case in enumerate(cases):
         cyclic_image = bool(config.get("cyclic_image", False))
-        shown_case = cases[(rank + 1) % len(cases)] if cyclic_image else case
+        fixed_image_case_id = config.get("fixed_image_case_id")
+        if fixed_image_case_id is not None:
+            shown_case = cases_by_id[fixed_image_case_id]
+        else:
+            shown_case = cases[(rank + 1) % len(cases)] if cyclic_image else case
         image_path = IMAGES / shown_case["image"]
-        prompt_intrinsics = list(shown_case["intrinsics"])
+        intrinsics_case = case if fixed_image_case_id is not None else shown_case
+        prompt_intrinsics = list(intrinsics_case["intrinsics"])
         intrinsics_scale = float(config.get("intrinsics_scale", 1.0))
         include_intrinsics = bool(config.get("include_intrinsics", True))
         explicit_no_object = bool(config.get("explicit_no_object", False))
@@ -185,6 +191,7 @@ def main() -> None:
             "shown_case_id": shown_case["id"],
             "shown_category": shown_case["category"],
             "cyclic_image": cyclic_image,
+            "prompt_intrinsics_case_id": intrinsics_case["id"],
             "model_id": config["model_id"],
         }
         started = time.perf_counter()
@@ -193,8 +200,10 @@ def main() -> None:
             serialization_template_only = bool(
                 config.get("serialization_template_only", False)
             )
-            requested_category = config.get("category_overrides", {}).get(
-                case["id"], case["category"]
+            requested_category = config.get("fixed_requested_category") or (
+                config.get("category_overrides", {}).get(
+                    case["id"], case["category"]
+                )
             )
             prompt = build_prompt(
                 requested_category, prompt_intrinsics, serialization_example,
