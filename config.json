@@ -4,8 +4,18 @@
   "intrinsics_scale": 1.0,
   "include_intrinsics": true,
   "explicit_no_object": false,
-  "cyclic_image": true,
+  "cyclic_image": false,
   "white_frame": false,
+  "category_overrides": {
+    "sunrgbd_chair": "blicket",
+    "sunrgbd_bed": "blicket",
+    "sunrgbd_table": "blicket",
+    "driving_cars": "blicket",
+    "office_chairs": "blicket",
+    "lounge_sofa": "blicket",
+    "lounge_table": "blicket",
+    "manipulation_bottle": "blicket"
+  },
   "task": "native_3d_grounding",
   "serialization_example": [-0.15, 0.05, 1.45, 0.72, 1.0, 0.68, 0.28, 0.15, 0.17]
 }
