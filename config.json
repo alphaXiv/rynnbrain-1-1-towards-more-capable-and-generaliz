@@ -1,4 +1,4 @@
 {
-  "model_id": "Alibaba-DAMO-Academy/RynnBrain1.1-9B",
+  "model_id": "Qwen/Qwen3.5-9B",
   "max_new_tokens": 128
 }
