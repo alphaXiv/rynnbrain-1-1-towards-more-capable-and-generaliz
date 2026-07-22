@@ -4,6 +4,7 @@
   "intrinsics_scale": 1.0,
   "include_intrinsics": true,
   "same_category_swap": true,
+  "swap_intrinsics_with_image": false,
   "white_frame": false,
   "blur_radius": 0.0,
   "grayscale_frame": false,
