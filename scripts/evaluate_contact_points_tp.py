@@ -43,13 +43,13 @@ def prepare_image_and_reference(
     image_path = DATA / str(case["image"])
     if transform is None:
         return image_path, reference
-    if transform != "grayscale":
+    if transform != "white_frame":
         raise ValueError(f"unsupported image_transform={transform!r}")
     transformed_dir = Path("/tmp/rynnbrain-transformed-inputs")
     transformed_dir.mkdir(parents=True, exist_ok=True)
     transformed_path = transformed_dir / f"{case['id']}.png"
     with Image.open(image_path) as image:
-        image.convert("L").convert("RGB").save(transformed_path)
+        Image.new("RGB", image.size, color=(255, 255, 255)).save(transformed_path)
     return transformed_path, reference
 
 
