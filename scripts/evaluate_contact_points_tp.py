@@ -25,8 +25,6 @@ PATTERN = re.compile(
     re.IGNORECASE,
 )
 TP_PLAN = {
-    "model.language_model.layers.*.self_attn.q_proj": "colwise",
-    "model.language_model.layers.*.self_attn.o_proj": "rowwise",
     "model.language_model.layers.*.mlp.experts.gate_up_proj": "packed_colwise",
     "model.language_model.layers.*.mlp.experts.down_proj": "rowwise",
     "model.language_model.layers.*.mlp.shared_expert.gate_proj": "colwise",
@@ -114,12 +112,11 @@ def main() -> None:
         torch.cuda.synchronize(device)
         started = time.perf_counter()
         with torch.inference_mode():
-            fixed_new_tokens = int(config["max_new_tokens"])
             output_ids = model.generate(
                 **inputs,
-                min_new_tokens=fixed_new_tokens,
-                max_new_tokens=fixed_new_tokens,
+                max_new_tokens=int(config["max_new_tokens"]),
                 do_sample=False,
+                synced_gpus=True,
             )
         torch.cuda.synchronize(device)
         elapsed = distributed_max(time.perf_counter() - started, device)
