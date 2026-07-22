@@ -8,7 +8,8 @@
   "white_frame": false,
   "fixed_image_case_id": "sunrgbd_chair",
   "fixed_requested_category": "chair",
-  "focal_scale_sweep": [0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 2.5, 3.0],
+  "focal_scale_sweep": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+  "image_scale_sweep": [0.5, 0.625, 0.75, 0.875, 1.0, 1.125, 1.25, 1.5],
   "task": "native_3d_grounding",
   "serialization_template_only": true
 }

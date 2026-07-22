@@ -186,12 +186,28 @@ def main() -> None:
         include_intrinsics = bool(config.get("include_intrinsics", True))
         explicit_no_object = bool(config.get("explicit_no_object", False))
         white_frame = bool(config.get("white_frame", False))
+        image_scale_sweep = config.get("image_scale_sweep")
+        image_scale = (
+            float(image_scale_sweep[rank])
+            if image_scale_sweep is not None
+            else float(config.get("image_scale", 1.0))
+        )
         prompt_intrinsics[0] *= intrinsics_scale * focal_scale
         prompt_intrinsics[1] *= intrinsics_scale * focal_scale
+        prompt_intrinsics = [value * image_scale for value in prompt_intrinsics]
         model_image_path = image_path
         with Image.open(image_path) as source_image:
             image_size = source_image.size
-            if white_frame:
+            if image_scale != 1.0:
+                image_size = tuple(
+                    max(1, round(dimension * image_scale))
+                    for dimension in source_image.size
+                )
+                model_image_path = Path(f"/tmp/scaled-frame-rank-{rank}.png")
+                source_image.convert("RGB").resize(
+                    image_size, Image.Resampling.LANCZOS
+                ).save(model_image_path)
+            elif white_frame:
                 model_image_path = Path(f"/tmp/white-frame-rank-{rank}.png")
                 Image.new("RGB", image_size, "white").save(model_image_path)
         result: dict[str, object] = {
@@ -270,6 +286,7 @@ def main() -> None:
                 "include_intrinsics": include_intrinsics,
                 "explicit_no_object": explicit_no_object,
                 "white_frame": white_frame,
+                "image_scale": image_scale,
                 "requested_category": requested_category,
                 "prompt_intrinsics": prompt_intrinsics,
                 "box_count": len(boxes),
