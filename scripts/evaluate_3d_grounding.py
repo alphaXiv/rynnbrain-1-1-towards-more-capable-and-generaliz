@@ -182,8 +182,13 @@ def main() -> None:
         started = time.perf_counter()
         try:
             serialization_example = config.get("serialization_example")
-            requested_category = config.get("category_overrides", {}).get(
-                case["id"], case["category"]
+            generic_query = bool(config.get("generic_query", False))
+            requested_category = (
+                "the main foreground object"
+                if generic_query
+                else config.get("category_overrides", {}).get(
+                    case["id"], case["category"]
+                )
             )
             prompt = build_prompt(
                 requested_category, prompt_intrinsics, serialization_example,
@@ -233,6 +238,7 @@ def main() -> None:
                 "response": response,
                 "boxes": boxes,
                 "serialization_example": serialization_example,
+                "generic_query": generic_query,
                 "intrinsics_scale": intrinsics_scale,
                 "include_intrinsics": include_intrinsics,
                 "explicit_no_object": explicit_no_object,
