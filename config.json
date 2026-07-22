@@ -1,5 +1,5 @@
 {
-  "model_id": "Alibaba-DAMO-Academy/RynnBrain1.1-122B-A10B",
+  "model_id": "Alibaba-DAMO-Academy/RynnBrain1.1-2B",
   "max_new_tokens": 256,
   "reverse_video_frames": false,
   "clockwise_rotation_90": true,
