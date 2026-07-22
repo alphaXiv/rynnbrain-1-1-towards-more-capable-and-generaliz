@@ -215,6 +215,7 @@ def main() -> None:
             output_ids = output_ids[:, inputs["input_ids"].shape[1] :]
             response = processor.decode(output_ids[0], skip_special_tokens=True)
             boxes = parse_boxes(response)
+            no_object = "<no object>" in response.lower()
             physical = bool(boxes and all(box_is_physical(box) for box in boxes))
             projected = bool(
                 boxes
@@ -226,6 +227,7 @@ def main() -> None:
             result.update({
                 "prompt": prompt,
                 "response": response,
+                "no_object": no_object,
                 "boxes": boxes,
                 "serialization_example": serialization_example,
                 "intrinsics_scale": intrinsics_scale,
@@ -306,6 +308,10 @@ def main() -> None:
     parsed = [row for row in successes if row.get("format_valid")]
     physical = [row for row in successes if row.get("physical_valid")]
     projected = [row for row in successes if row.get("projection_valid")]
+    abstained = [row for row in successes if row.get("no_object")]
+    conflicted = [
+        row for row in abstained if int(row.get("box_count", 0)) > 0
+    ]
     referenced = [row for row in parsed if "recorded_center_error_m" in row]
     anchored = [
         row for row in parsed if "serialization_anchor_center_error_m" in row
@@ -321,6 +327,8 @@ def main() -> None:
         "format_valid_rate": len(parsed) / len(rows),
         "physical_valid_rate": len(physical) / len(rows),
         "projection_valid_rate": len(projected) / len(rows),
+        "no_object_rate": len(abstained) / len(rows),
+        "box_and_no_object_rate": len(conflicted) / len(rows),
         "mean_box_count": statistics.fmean(row["box_count"] for row in successes),
         "mean_recorded_center_error_m": statistics.fmean(
             row["recorded_center_error_m"] for row in referenced
