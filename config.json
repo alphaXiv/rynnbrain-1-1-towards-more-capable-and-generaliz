@@ -8,6 +8,7 @@
   "grayscale_frame": false,
   "image_scale": 1.0,
   "crop_fraction": 0.8,
+  "calibrate_crop": false,
   "x_axis_sign": 1.0,
   "y_axis_sign": 1.0,
   "coordinate_scale": 1.0,

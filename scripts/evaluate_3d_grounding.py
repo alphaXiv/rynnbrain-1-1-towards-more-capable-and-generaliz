@@ -178,6 +178,7 @@ def main() -> None:
         grayscale_frame = bool(config.get("grayscale_frame", False))
         image_scale = float(config.get("image_scale", 1.0))
         crop_fraction = float(config.get("crop_fraction", 1.0))
+        calibrate_crop = bool(config.get("calibrate_crop", True))
         x_axis_sign = float(config.get("x_axis_sign", 1.0))
         y_axis_sign = float(config.get("y_axis_sign", 1.0))
         coordinate_scale = float(config.get("coordinate_scale", 1.0))
@@ -198,8 +199,9 @@ def main() -> None:
                 right = width - left
                 bottom = height - top
                 image_size = (right - left, bottom - top)
-                prompt_intrinsics[2] -= left
-                prompt_intrinsics[3] -= top
+                if calibrate_crop:
+                    prompt_intrinsics[2] -= left
+                    prompt_intrinsics[3] -= top
                 model_image_path = Path(f"/tmp/cropped-frame-rank-{rank}.png")
                 source_image.convert("RGB").crop(
                     (left, top, right, bottom)
@@ -322,6 +324,7 @@ def main() -> None:
                 "grayscale_frame": grayscale_frame,
                 "image_scale": image_scale,
                 "crop_fraction": crop_fraction,
+                "calibrate_crop": calibrate_crop,
                 "x_axis_sign": x_axis_sign,
                 "y_axis_sign": y_axis_sign,
                 "coordinate_scale": coordinate_scale,
