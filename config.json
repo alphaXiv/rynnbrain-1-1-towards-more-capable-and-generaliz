@@ -5,7 +5,7 @@
   "include_intrinsics": true,
   "fixed_image_case_id": "sunrgbd_chair",
   "fixed_requested_category": "chair",
-  "focal_scale_sweep": [0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 2.5, 3.0],
+  "focal_scale_sweep": [0.8, 0.85, 0.9, 0.95, 1.05, 1.1, 1.15, 1.2],
   "white_frame": false,
   "blur_radius": 0.0,
   "grayscale_frame": false,
