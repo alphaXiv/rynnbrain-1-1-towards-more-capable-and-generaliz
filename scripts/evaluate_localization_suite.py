@@ -120,6 +120,19 @@ def horizontally_flipped_case(
     return transformed
 
 
+def grayscale_case(case: dict[str, object], rank: int) -> dict[str, object]:
+    transformed = copy.deepcopy(case)
+    grayscale_images = []
+    for index, relative_path in enumerate(case["images"]):
+        source_path = ASSETS / relative_path
+        target_path = RESULTS / f"grayscale-rank-{rank}-image-{index}.png"
+        with Image.open(source_path) as source_image:
+            source_image.convert("L").convert("RGB").save(target_path)
+        grayscale_images.append(str(target_path))
+    transformed["images"] = grayscale_images
+    return transformed
+
+
 def main() -> None:
     dist.init_process_group("nccl")
     rank = dist.get_rank()
@@ -144,6 +157,9 @@ def main() -> None:
     horizontal_flip = bool(config.get("horizontal_flip", False))
     if horizontal_flip:
         case = horizontally_flipped_case(case, rank)
+    grayscale = bool(config.get("grayscale", False))
+    if grayscale:
+        case = grayscale_case(case, rank)
     result: dict[str, object] = {
         "rank": rank,
         "case_id": case["id"],
@@ -151,6 +167,7 @@ def main() -> None:
         "model_id": config["model_id"],
         "image_count": len(case["images"]),
         "horizontal_flip": horizontal_flip,
+        "grayscale": grayscale,
     }
     started = time.perf_counter()
     try:
