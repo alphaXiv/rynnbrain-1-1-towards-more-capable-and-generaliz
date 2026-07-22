@@ -51,6 +51,24 @@ def apply_inset_letterbox(case: dict[str, object], scale: float) -> None:
     ]
 
 
+def apply_clockwise_rotation(case: dict[str, object]) -> None:
+    """Rotate every frame 90 degrees clockwise and update normalized anchors."""
+    output_dir = Path("/tmp/clockwise-rotation") / str(case["id"])
+    output_dir.mkdir(parents=True, exist_ok=True)
+    transformed_images: list[str] = []
+    for index, relative_path in enumerate(case["images"]):
+        with Image.open(ASSETS / relative_path) as source:
+            image = source.convert("RGB")
+        rotated = image.transpose(Image.Transpose.ROTATE_270)
+        output_path = output_dir / f"frame-{index:02d}.png"
+        rotated.save(output_path)
+        transformed_images.append(str(output_path))
+    case["images"] = transformed_images
+    case["recorded_points"] = [
+        [1000.0 - y, x] for x, y in case["recorded_points"]
+    ]
+
+
 def main() -> None:
     gpu_count = torch.cuda.device_count()
     if gpu_count != 8:
@@ -84,6 +102,7 @@ def main() -> None:
     rows: list[dict[str, object]] = []
     reverse_video_frames = bool(config.get("reverse_video_frames", False))
     inset_letterbox_scale = config.get("inset_letterbox_scale")
+    clockwise_rotation = bool(config.get("clockwise_rotation_90", False))
     for source_case in cases:
         case = copy.deepcopy(source_case)
         source_recorded_frame = case.get("recorded_frame")
@@ -94,6 +113,8 @@ def main() -> None:
                 case["recorded_frame"] = len(case["images"]) - 1 - source_recorded_frame
         if inset_letterbox_scale is not None:
             apply_inset_letterbox(case, float(inset_letterbox_scale))
+        if clockwise_rotation:
+            apply_clockwise_rotation(case)
         conversation = [{"role": "user", "content": build_content(case)}]
         inputs = processor.apply_chat_template(
             conversation,
@@ -140,6 +161,7 @@ def main() -> None:
             "image_count": len(case["images"]),
             "reverse_video_frames": reverse_video_frames,
             "inset_letterbox_scale": inset_letterbox_scale,
+            "clockwise_rotation_90": clockwise_rotation,
             "source_recorded_frame": source_recorded_frame,
             "source_recorded_points": source_recorded_points,
             "instruction": case["instruction"],
