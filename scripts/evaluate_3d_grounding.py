@@ -61,10 +61,16 @@ def build_prompt(
     coordinate_units: str = "meters",
     center_representation: str = "camera_xyz",
     serialization_example: list[float] | None = None,
+    explicit_no_object: bool = False,
 ) -> str:
     intrinsics_block = (
         f"The camera intrinsics matrix is:\n{format_intrinsics(intrinsics)}\n\n"
         if include_intrinsics
+        else ""
+    )
+    absence_instruction = (
+        f"If no {category} is visible, return exactly <no object> and do not invent a box.\n\n"
+        if explicit_no_object
         else ""
     )
     if center_representation == "pixel_uvz":
@@ -100,7 +106,7 @@ def build_prompt(
         )
     return f"""Find all {category} in this image.
 
-{intrinsics_block}Predict 3D bounding boxes in the camera coordinate system, where:
+{absence_instruction}{intrinsics_block}Predict 3D bounding boxes in the camera coordinate system, where:
 - x points to the {x_direction}
 - y points {y_direction}
 - z points forward
@@ -183,6 +189,7 @@ def main() -> None:
         prompt_intrinsics = list(case["intrinsics"])
         intrinsics_scale = float(config.get("intrinsics_scale", 1.0))
         include_intrinsics = bool(config.get("include_intrinsics", True))
+        explicit_no_object = bool(config.get("explicit_no_object", False))
         white_frame = bool(config.get("white_frame", False))
         blur_radius = float(config.get("blur_radius", 0.0))
         grayscale_frame = bool(config.get("grayscale_frame", False))
@@ -255,6 +262,7 @@ def main() -> None:
                 coordinate_units,
                 center_representation,
                 serialization_example,
+                explicit_no_object,
             )
             conversation = [{
                 "role": "user",
@@ -340,6 +348,7 @@ def main() -> None:
                 "coordinate_units": coordinate_units,
                 "center_representation": center_representation,
                 "serialization_example": serialization_example,
+                "explicit_no_object": explicit_no_object,
                 "requested_category": requested_category,
                 "prompt_intrinsics": prompt_intrinsics,
                 "box_count": len(boxes),
