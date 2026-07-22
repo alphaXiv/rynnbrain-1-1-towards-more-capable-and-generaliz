@@ -43,14 +43,14 @@ def distributed_max(value: float, device: torch.device) -> float:
 
 
 def main() -> None:
-    dist.init_process_group("nccl")
-    rank = dist.get_rank()
-    world = dist.get_world_size()
     local_rank = int(os.environ["LOCAL_RANK"])
-    if world != 8:
-        raise RuntimeError(f"expected 8 tensor-parallel ranks, received {world}")
     torch.cuda.set_device(local_rank)
     device = torch.device("cuda", local_rank)
+    dist.init_process_group("nccl", device_id=device)
+    rank = dist.get_rank()
+    world = dist.get_world_size()
+    if world != 8:
+        raise RuntimeError(f"expected 8 tensor-parallel ranks, received {world}")
 
     config = json.loads((ROOT / "config.json").read_text())
     cases = json.loads((DATA / "test_cases.json").read_text())
