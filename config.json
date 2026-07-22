@@ -6,7 +6,9 @@
   "white_frame": false,
   "blur_radius": 0.0,
   "x_axis_sign": 1.0,
-  "y_axis_sign": -1.0,
+  "y_axis_sign": 1.0,
+  "coordinate_scale": 100.0,
+  "coordinate_units": "centimeters",
   "task": "native_3d_grounding",
-  "serialization_example": [-0.15, 0.05, 1.45, 0.72, 1.0, 0.68, 0.28, 0.15, 0.17]
+  "serialization_example": [-15.0, 5.0, 145.0, 72.0, 100.0, 68.0, 0.28, 0.15, 0.17]
 }
