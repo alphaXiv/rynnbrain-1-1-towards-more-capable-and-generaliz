@@ -1,0 +1,29 @@
+{
+  "chair_sunrgbd.jpg": {
+    "fx": 529.5,
+    "fy": 529.5,
+    "cx": 365.0,
+    "cy": 265.0,
+    "category": "chair",
+    "seq_name": "SUNRGBD/kv2/kinect2data/003627_2014-05-23_22-01-55_094959634447_rgbf000100-resize",
+    "benchmark_score": 0.8929845935624875
+  },
+  "bed_sunrgbd.jpg": {
+    "fx": 529.5,
+    "fy": 529.5,
+    "cx": 365.0,
+    "cy": 265.0,
+    "category": "bed",
+    "seq_name": "SUNRGBD/kv2/kinect2data/000022_2014-05-26_14-42-46_260595134347_rgbf000031-resize",
+    "benchmark_score": 0.8608429041651089
+  },
+  "table_sunrgbd.jpg": {
+    "fx": 693.74469,
+    "fy": 693.74469,
+    "cx": 360.431915,
+    "cy": 264.75,
+    "category": "table",
+    "seq_name": "SUNRGBD/realsense/lg/2014_10_30-15_31_16-1311000073",
+    "benchmark_score": 0.866631005466494
+  }
+}

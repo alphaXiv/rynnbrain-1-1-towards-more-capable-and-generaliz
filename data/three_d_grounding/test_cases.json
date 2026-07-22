@@ -1,0 +1,53 @@
+[
+  {
+    "id": "sunrgbd_chair",
+    "image": "chair_sunrgbd.jpg",
+    "category": "chair",
+    "intrinsics": [529.5, 529.5, 365.0, 265.0],
+    "recorded_reference": [-0.15, 0.05, 1.45, 0.72, 1.0, 0.68, 0.28, 0.15, 0.17]
+  },
+  {
+    "id": "sunrgbd_bed",
+    "image": "bed_sunrgbd.jpg",
+    "category": "bed",
+    "intrinsics": [529.5, 529.5, 365.0, 265.0],
+    "recorded_reference": [-0.01, 0.01, 3.01, 2.15, 1.32, 1.65, 0.11, 0.33, 0.10]
+  },
+  {
+    "id": "sunrgbd_table",
+    "image": "table_sunrgbd.jpg",
+    "category": "table",
+    "intrinsics": [693.74469, 693.74469, 360.431915, 264.75],
+    "recorded_reference": [0.21, -0.10, 2.02, 1.0, 0.75, 0.75, 0.22, 0.15, 0.11]
+  },
+  {
+    "id": "driving_cars",
+    "image": "autonomous_driving.jpg",
+    "category": "car",
+    "intrinsics": [1266.417203046554, 1266.417203046554, 816.2670197447984, 491.50706579294757]
+  },
+  {
+    "id": "office_chairs",
+    "image": "office.jpg",
+    "category": "chair",
+    "intrinsics": [1470.4238891601562, 1470.4237747192383, 715.1304817199707, 937.8031539916992]
+  },
+  {
+    "id": "lounge_sofa",
+    "image": "lounge.jpg",
+    "category": "sofa",
+    "intrinsics": [529.5, 529.5, 365.0, 265.0]
+  },
+  {
+    "id": "lounge_table",
+    "image": "lounge.jpg",
+    "category": "table",
+    "intrinsics": [529.5, 529.5, 365.0, 265.0]
+  },
+  {
+    "id": "manipulation_bottle",
+    "image": "manipulation.jpg",
+    "category": "bottle",
+    "intrinsics": [866.27, 866.27, 512.0, 384.0]
+  }
+]
