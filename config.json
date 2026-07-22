@@ -1,4 +1,5 @@
 {
   "model_id": "Alibaba-DAMO-Academy/RynnBrain1.1-2B",
-  "max_new_tokens": 128
+  "max_new_tokens": 512,
+  "task": "native_3d_grounding"
 }
