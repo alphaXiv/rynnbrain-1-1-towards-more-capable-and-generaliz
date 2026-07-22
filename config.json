@@ -7,8 +7,9 @@
   "blur_radius": 0.0,
   "x_axis_sign": 1.0,
   "y_axis_sign": 1.0,
-  "coordinate_scale": 100.0,
-  "coordinate_units": "centimeters",
+  "coordinate_scale": 1.0,
+  "coordinate_units": "meters",
+  "center_representation": "pixel_uvz",
   "task": "native_3d_grounding",
-  "serialization_example": [-15.0, 5.0, 145.0, 72.0, 100.0, 68.0, 0.28, 0.15, 0.17]
+  "serialization_example": [310.24, 283.25, 1.45, 0.72, 1.0, 0.68, 0.28, 0.15, 0.17]
 }

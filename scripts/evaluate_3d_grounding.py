@@ -60,11 +60,23 @@ def build_prompt(
     x_direction: str = "right",
     y_direction: str = "downward",
     coordinate_units: str = "meters",
+    center_representation: str = "camera_xyz",
 ) -> str:
     intrinsics_block = (
         f"The camera intrinsics matrix is:\n{format_intrinsics(intrinsics)}\n\n"
         if include_intrinsics
         else ""
+    )
+    center_fields = "u, v, z" if center_representation == "pixel_uvz" else "cx, cy, cz"
+    center_definition = (
+        "u, v: pixel coordinates of the 3D box center; z: depth in meters"
+        if center_representation == "pixel_uvz"
+        else f"cx, cy, cz: 3D coordinates of the box center in the camera coordinate system, in {coordinate_units}"
+    )
+    units_constraint = (
+        "Use pixels for u, v and meters for z, x_size, y_size, z_size"
+        if center_representation == "pixel_uvz"
+        else f"Use {coordinate_units} for cx, cy, cz, x_size, y_size, z_size"
     )
     example = ""
     if serialization_example is not None:
@@ -82,16 +94,16 @@ def build_prompt(
 - z points forward
 
 For each object, return:
-<3D Grounding> cx, cy, cz, x_size, y_size, z_size, pitch, yaw, roll </3D Grounding>
+<3D Grounding> {center_fields}, x_size, y_size, z_size, pitch, yaw, roll </3D Grounding>
 
 Definitions:
-- cx, cy, cz: 3D coordinates of the box center in the camera coordinate system, in {coordinate_units}
+- {center_definition}
 - x_size, y_size, z_size: box dimensions in the box local coordinate system, in {coordinate_units}
 - pitch, yaw, roll: normalized rotations in the range [-1, 1], corresponding to [-180, 180] degrees
 
 Constraints:
 - x_size >= z_size
-- Use {coordinate_units} for cx, cy, cz, x_size, y_size, z_size
+- {units_constraint}
 - Use normalized values in [-1, 1] for pitch, yaw, roll
 {example}
 <think>\n\n</think>\n\n"""
@@ -165,6 +177,9 @@ def main() -> None:
         y_axis_sign = float(config.get("y_axis_sign", 1.0))
         coordinate_scale = float(config.get("coordinate_scale", 1.0))
         coordinate_units = str(config.get("coordinate_units", "meters"))
+        center_representation = str(
+            config.get("center_representation", "camera_xyz")
+        )
         prompt_intrinsics[0] *= intrinsics_scale
         prompt_intrinsics[1] *= intrinsics_scale
         model_image_path = image_path
@@ -196,6 +211,7 @@ def main() -> None:
                 "left" if x_axis_sign < 0 else "right",
                 "upward" if y_axis_sign < 0 else "downward",
                 coordinate_units,
+                center_representation,
             )
             conversation = [{
                 "role": "user",
@@ -228,7 +244,21 @@ def main() -> None:
             output_ids = output_ids[:, inputs["input_ids"].shape[1] :]
             response = processor.decode(output_ids[0], skip_special_tokens=True)
             boxes = parse_boxes(response)
-            physical = bool(boxes and all(box_is_physical(box) for box in boxes))
+            camera_boxes = boxes
+            if center_representation == "pixel_uvz":
+                fx, fy, cx, cy = prompt_intrinsics
+                camera_boxes = [
+                    [
+                        (box[0] - cx) * box[2] / fx,
+                        (box[1] - cy) * box[2] / fy,
+                        box[2],
+                        *box[3:],
+                    ]
+                    for box in boxes
+                ]
+            physical = bool(
+                camera_boxes and all(box_is_physical(box) for box in camera_boxes)
+            )
             projected = bool(
                 boxes
                 and any(
@@ -239,13 +269,14 @@ def main() -> None:
                         x_axis_sign,
                         y_axis_sign,
                     )
-                    for box in boxes
+                    for box in camera_boxes
                 )
             )
             result.update({
                 "prompt": prompt,
                 "response": response,
                 "boxes": boxes,
+                "camera_boxes": camera_boxes,
                 "serialization_example": serialization_example,
                 "intrinsics_scale": intrinsics_scale,
                 "include_intrinsics": include_intrinsics,
@@ -255,6 +286,7 @@ def main() -> None:
                 "y_axis_sign": y_axis_sign,
                 "coordinate_scale": coordinate_scale,
                 "coordinate_units": coordinate_units,
+                "center_representation": center_representation,
                 "requested_category": requested_category,
                 "prompt_intrinsics": prompt_intrinsics,
                 "box_count": len(boxes),
@@ -269,16 +301,16 @@ def main() -> None:
                 ),
             })
             reference = case.get("recorded_reference")
-            if boxes and reference is not None and coordinate_scale == 1.0:
+            if camera_boxes and reference is not None and coordinate_scale == 1.0:
                 result["recorded_reference"] = reference
                 result["recorded_center_error_m"] = math.dist(
-                    boxes[0][:3], reference[:3]
+                    camera_boxes[0][:3], reference[:3]
                 )
                 result["recorded_dimension_error_m"] = math.dist(
-                    boxes[0][3:6], reference[3:6]
+                    camera_boxes[0][3:6], reference[3:6]
                 )
                 result["recorded_angle_mae"] = statistics.fmean(
-                    abs(boxes[0][index] - reference[index])
+                    abs(camera_boxes[0][index] - reference[index])
                     for index in range(6, 9)
                 )
             if boxes and serialization_example is not None:
@@ -290,7 +322,7 @@ def main() -> None:
                     for index in range(9)
                 )
             baseline = CALIBRATION_BASELINES.get(case["id"])
-            if boxes and baseline is not None:
+            if camera_boxes and baseline is not None:
                 expected = [
                     coordinate_scale * x_axis_sign * baseline[0] / intrinsics_scale,
                     coordinate_scale * y_axis_sign * baseline[1] / intrinsics_scale,
@@ -299,22 +331,22 @@ def main() -> None:
                 result["calibration_baseline_center"] = baseline
                 result["calibration_expected_center"] = expected
                 result["calibration_expected_center_error_m"] = math.dist(
-                    boxes[0][:3], expected
+                    camera_boxes[0][:3], expected
                 )
                 result["calibration_unscaled_center_error_m"] = math.dist(
-                    boxes[0][:3], baseline
+                    camera_boxes[0][:3], baseline
                 )
                 result["calibration_expected_x_error_m"] = abs(
-                    boxes[0][0] - expected[0]
+                    camera_boxes[0][0] - expected[0]
                 )
                 result["calibration_unscaled_x_error_m"] = abs(
-                    boxes[0][0] - baseline[0]
+                    camera_boxes[0][0] - baseline[0]
                 )
                 result["calibration_expected_y_error_m"] = abs(
-                    boxes[0][1] - expected[1]
+                    camera_boxes[0][1] - expected[1]
                 )
                 result["calibration_unscaled_y_error_m"] = abs(
-                    boxes[0][1] - baseline[1]
+                    camera_boxes[0][1] - baseline[1]
                 )
         except Exception as exc:
             result.update({
