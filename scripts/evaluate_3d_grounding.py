@@ -59,6 +59,7 @@ def build_prompt(
     include_intrinsics: bool = True,
     explicit_no_object: bool = False,
     repeat_constraints_last: bool = False,
+    serialization_template_only: bool = False,
 ) -> str:
     intrinsics_block = (
         f"The camera intrinsics matrix is:\n{format_intrinsics(intrinsics)}\n\n"
@@ -71,7 +72,14 @@ def build_prompt(
         else ""
     )
     example = ""
-    if serialization_example is not None:
+    if serialization_template_only:
+        example = (
+            "\nFormat template (field names are placeholders, not values):\n"
+            "<3D Grounding> cx, cy, cz, x_size, y_size, z_size, "
+            "pitch, yaw, roll </3D Grounding>\n"
+            "Return only tagged 3D Grounding boxes, never JSON or prose.\n"
+        )
+    elif serialization_example is not None:
         serialized = ", ".join(f"{value:.2f}" for value in serialization_example)
         example = (
             "\nSerialization example (format only; do not copy its values):\n"
@@ -194,6 +202,9 @@ def main() -> None:
             repeat_constraints_last = bool(
                 config.get("repeat_constraints_last", False)
             )
+            serialization_template_only = bool(
+                config.get("serialization_template_only", False)
+            )
             requested_category = config.get("category_overrides", {}).get(
                 case["id"], case["category"]
             )
@@ -201,6 +212,7 @@ def main() -> None:
                 requested_category, prompt_intrinsics, serialization_example,
                 include_intrinsics, explicit_no_object,
                 repeat_constraints_last,
+                serialization_template_only,
             )
             conversation = [{
                 "role": "user",
@@ -247,6 +259,7 @@ def main() -> None:
                 "boxes": boxes,
                 "serialization_example": serialization_example,
                 "repeat_constraints_last": repeat_constraints_last,
+                "serialization_template_only": serialization_template_only,
                 "intrinsics_scale": intrinsics_scale,
                 "include_intrinsics": include_intrinsics,
                 "explicit_no_object": explicit_no_object,
