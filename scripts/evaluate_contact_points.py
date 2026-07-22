@@ -49,7 +49,7 @@ def prepare_image_and_reference(
     image_path = DATA / str(case["image"])
     if transform is None:
         return image_path, reference
-    if transform not in {"horizontal_flip", "white_frame"}:
+    if transform not in {"horizontal_flip", "white_frame", "black_frame"}:
         raise ValueError(f"unsupported image_transform={transform!r}")
 
     transformed_dir = Path("/tmp/rynnbrain-transformed-inputs")
@@ -58,8 +58,10 @@ def prepare_image_and_reference(
     with Image.open(image_path) as image:
         if transform == "horizontal_flip":
             transformed = image.convert("RGB").transpose(Image.Transpose.FLIP_LEFT_RIGHT)
-        else:
+        elif transform == "white_frame":
             transformed = Image.new("RGB", image.size, color=(255, 255, 255))
+        else:
+            transformed = Image.new("RGB", image.size, color=(0, 0, 0))
         transformed.save(transformed_path)
     if transform == "horizontal_flip" and reference is not None:
         x, y, theta = reference
