@@ -170,8 +170,11 @@ def main() -> None:
         started = time.perf_counter()
         try:
             serialization_example = config.get("serialization_example")
+            requested_category = config.get("category_overrides", {}).get(
+                case["id"], case["category"]
+            )
             prompt = build_prompt(
-                case["category"], prompt_intrinsics, serialization_example,
+                requested_category, prompt_intrinsics, serialization_example,
                 include_intrinsics
             )
             conversation = [{
@@ -221,6 +224,7 @@ def main() -> None:
                 "intrinsics_scale": intrinsics_scale,
                 "include_intrinsics": include_intrinsics,
                 "white_frame": white_frame,
+                "requested_category": requested_category,
                 "prompt_intrinsics": prompt_intrinsics,
                 "box_count": len(boxes),
                 "format_valid": bool(boxes),
