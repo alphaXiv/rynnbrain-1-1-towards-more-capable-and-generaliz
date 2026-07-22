@@ -67,9 +67,13 @@ def main() -> None:
     dist.barrier()
 
     case = cases[rank]
+    image_case_offset = int(config.get("image_case_offset", 0))
+    image_case = cases[(rank + image_case_offset) % len(cases)]
     result: dict[str, object] = {
         "rank": rank,
         "case_id": case["id"],
+        "image_case_id": image_case["id"],
+        "image_case_offset": image_case_offset,
         "group": case["group"],
         "model_id": config["model_id"],
     }
@@ -86,7 +90,7 @@ def main() -> None:
         conversation = [{
             "role": "user",
             "content": [
-                {"type": "image", "image": str(DATA / case["image"])},
+                {"type": "image", "image": str(DATA / image_case["image"])},
                 {"type": "text", "text": evaluated_query},
             ],
         }]
@@ -111,6 +115,7 @@ def main() -> None:
         response = processor.decode(output_ids[0], skip_special_tokens=True)
         pose = parse_pose(response)
         ref_pose = parse_pose(references[case["id"]]["pred"])
+        image_ref_pose = parse_pose(references[image_case["id"]]["pred"])
         valid = pose is not None and all(math.isfinite(x) for x in pose)
         in_bounds = bool(valid and 0 <= pose[0] <= 1000 and 0 <= pose[1] <= 1000)
         result.update({
@@ -118,6 +123,7 @@ def main() -> None:
             "response": response,
             "pose": pose,
             "reference_pose": ref_pose,
+            "image_reference_pose": image_ref_pose,
             "format_valid": valid,
             "coordinate_valid": in_bounds,
             "inference_seconds": time.perf_counter() - inference_started,
@@ -127,6 +133,13 @@ def main() -> None:
         if valid and ref_pose is not None:
             result["reference_position_error"] = math.dist(pose[:2], ref_pose[:2])
             result["reference_angle_error_deg"] = circular_gripper_error(pose[2], ref_pose[2])
+        if valid and image_ref_pose is not None:
+            result["image_reference_position_error"] = math.dist(
+                pose[:2], image_ref_pose[:2]
+            )
+            result["image_reference_angle_error_deg"] = circular_gripper_error(
+                pose[2], image_ref_pose[2]
+            )
     except Exception as exc:  # keep every rank rendezvousing so rank 0 can report evidence
         result.update({
             "error": f"{type(exc).__name__}: {exc}",
@@ -146,6 +159,8 @@ def main() -> None:
         bounded = [row for row in successes if row.get("coordinate_valid")]
         position_errors = [row["reference_position_error"] for row in parsed]
         angle_errors = [row["reference_angle_error_deg"] for row in parsed]
+        image_position_errors = [row["image_reference_position_error"] for row in parsed]
+        image_angle_errors = [row["image_reference_angle_error_deg"] for row in parsed]
         summary = {
             "model_id": config["model_id"],
             "cases": len(rows),
@@ -154,6 +169,8 @@ def main() -> None:
             "coordinate_valid_rate": len(bounded) / len(rows),
             "mean_reference_position_error": statistics.fmean(position_errors) if position_errors else None,
             "mean_reference_angle_error_deg": statistics.fmean(angle_errors) if angle_errors else None,
+            "mean_image_reference_position_error": statistics.fmean(image_position_errors) if image_position_errors else None,
+            "mean_image_reference_angle_error_deg": statistics.fmean(image_angle_errors) if image_angle_errors else None,
             "mean_inference_seconds": statistics.fmean(
                 row["inference_seconds"] for row in successes
             ) if successes else None,

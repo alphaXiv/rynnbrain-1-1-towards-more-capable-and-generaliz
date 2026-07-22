@@ -1,5 +1,6 @@
 {
   "model_id": "Alibaba-DAMO-Academy/RynnBrain1.1-2B",
   "max_new_tokens": 128,
+  "image_case_offset": 1,
   "query_suffix": "\nReturn only one pose in exactly this format: <grasp pose> (x, y), theta </grasp pose>. Use normalized image coordinates x and y in [0, 1000] and theta in degrees."
 }
