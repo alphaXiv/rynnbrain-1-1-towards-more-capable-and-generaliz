@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import copy
 import json
 import math
 import os
@@ -15,6 +16,7 @@ from pathlib import Path
 import torch
 import torch.distributed as dist
 from huggingface_hub import snapshot_download
+from PIL import Image
 from transformers import AutoModelForImageTextToText, AutoProcessor
 
 
@@ -96,6 +98,28 @@ def build_content(case: dict[str, object]) -> list[dict[str, str]]:
     return content
 
 
+def horizontally_flipped_case(
+    case: dict[str, object], rank: int
+) -> dict[str, object]:
+    transformed = copy.deepcopy(case)
+    flipped_images = []
+    for index, relative_path in enumerate(case["images"]):
+        source_path = ASSETS / relative_path
+        target_path = RESULTS / f"flip-rank-{rank}-image-{index}.png"
+        with Image.open(source_path) as source_image:
+            source_image.transpose(Image.Transpose.FLIP_LEFT_RIGHT).save(target_path)
+        flipped_images.append(str(target_path))
+    transformed["images"] = flipped_images
+    transformed_points = [
+        [1000 - point[0], point[1]] for point in case["recorded_points"]
+    ]
+    if case["task"] == "object":
+        transformed_points.reverse()
+    transformed["recorded_points"] = transformed_points
+    transformed["source_recorded_points"] = case["recorded_points"]
+    return transformed
+
+
 def main() -> None:
     dist.init_process_group("nccl")
     rank = dist.get_rank()
@@ -117,12 +141,16 @@ def main() -> None:
     dist.barrier()
 
     case = cases[rank]
+    horizontal_flip = bool(config.get("horizontal_flip", False))
+    if horizontal_flip:
+        case = horizontally_flipped_case(case, rank)
     result: dict[str, object] = {
         "rank": rank,
         "case_id": case["id"],
         "task": case["task"],
         "model_id": config["model_id"],
         "image_count": len(case["images"]),
+        "horizontal_flip": horizontal_flip,
     }
     started = time.perf_counter()
     try:
@@ -181,6 +209,8 @@ def main() -> None:
         })
         reference_points = case["recorded_points"]
         result["recorded_points"] = reference_points
+        if "source_recorded_points" in case:
+            result["source_recorded_points"] = case["source_recorded_points"]
         if coordinate_valid:
             if case["task"] == "object":
                 result["recorded_bbox_iou"] = bbox_iou(points, reference_points)
