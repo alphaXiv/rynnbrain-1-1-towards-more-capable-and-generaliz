@@ -3,6 +3,7 @@
   "max_new_tokens": 512,
   "intrinsics_scale": 1.0,
   "include_intrinsics": true,
+  "explicit_no_object": true,
   "white_frame": true,
   "blur_radius": 0.0,
   "grayscale_frame": false,
