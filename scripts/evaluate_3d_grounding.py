@@ -53,16 +53,24 @@ def format_intrinsics(values: list[float]) -> str:
 
 
 def build_prompt(
-    category: str, intrinsics: list[float], include_intrinsics: bool = True
+    category: str,
+    intrinsics: list[float],
+    include_intrinsics: bool = True,
+    explicit_no_object: bool = False,
 ) -> str:
     intrinsics_block = (
         f"The camera intrinsics matrix is:\n{format_intrinsics(intrinsics)}\n\n"
         if include_intrinsics
         else ""
     )
+    absence_instruction = (
+        f"If no {category} is visible, return exactly <no object> and do not invent a box.\n\n"
+        if explicit_no_object
+        else ""
+    )
     return f"""Find all {category} in this image.
 
-{intrinsics_block}Predict 3D bounding boxes in the camera coordinate system, where:
+{absence_instruction}{intrinsics_block}Predict 3D bounding boxes in the camera coordinate system, where:
 - x points to the right
 - y points downward
 - z points forward
@@ -140,6 +148,7 @@ def main() -> None:
         prompt_intrinsics = list(case["intrinsics"])
         intrinsics_scale = float(config.get("intrinsics_scale", 1.0))
         include_intrinsics = bool(config.get("include_intrinsics", True))
+        explicit_no_object = bool(config.get("explicit_no_object", False))
         white_frame = bool(config.get("white_frame", False))
         prompt_intrinsics[0] *= intrinsics_scale
         prompt_intrinsics[1] *= intrinsics_scale
@@ -161,7 +170,10 @@ def main() -> None:
                 case["id"], case["category"]
             )
             prompt = build_prompt(
-                requested_category, prompt_intrinsics, include_intrinsics
+                requested_category,
+                prompt_intrinsics,
+                include_intrinsics,
+                explicit_no_object,
             )
             conversation = [{
                 "role": "user",
@@ -208,6 +220,7 @@ def main() -> None:
                 "boxes": boxes,
                 "intrinsics_scale": intrinsics_scale,
                 "include_intrinsics": include_intrinsics,
+                "explicit_no_object": explicit_no_object,
                 "white_frame": white_frame,
                 "requested_category": requested_category,
                 "prompt_intrinsics": prompt_intrinsics,
