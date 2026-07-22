@@ -82,7 +82,9 @@ def main() -> None:
             dtype=torch.bfloat16,
             attn_implementation="sdpa",
         ).to(device).eval()
-        evaluated_query = case["query"] + config.get("query_suffix", "")
+        evaluated_query = config.get("query_override", case["query"]) + config.get(
+            "query_suffix", ""
+        )
         conversation = [{
             "role": "user",
             "content": [
