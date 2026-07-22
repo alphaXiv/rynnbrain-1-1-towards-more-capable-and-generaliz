@@ -49,7 +49,7 @@ def prepare_image_and_reference(
     image_path = DATA / str(case["image"])
     if transform is None:
         return image_path, reference
-    if transform not in {"horizontal_flip", "vertical_flip", "rotate_180"}:
+    if transform not in {"horizontal_flip", "vertical_flip", "rotate_180", "rotate_90_cw"}:
         raise ValueError(f"unsupported image_transform={transform!r}")
 
     transformed_dir = Path("/tmp/rynnbrain-transformed-inputs")
@@ -59,6 +59,7 @@ def prepare_image_and_reference(
         "horizontal_flip": Image.Transpose.FLIP_LEFT_RIGHT,
         "vertical_flip": Image.Transpose.FLIP_TOP_BOTTOM,
         "rotate_180": Image.Transpose.ROTATE_180,
+        "rotate_90_cw": Image.Transpose.ROTATE_270,
     }[transform]
     with Image.open(image_path) as image:
         image.convert("RGB").transpose(transpose_method).save(transformed_path)
@@ -68,8 +69,10 @@ def prepare_image_and_reference(
             reference = (1000.0 - x, y, (180.0 - theta) % 180.0)
         elif transform == "vertical_flip":
             reference = (x, 1000.0 - y, (-theta) % 180.0)
-        else:
+        elif transform == "rotate_180":
             reference = (1000.0 - x, 1000.0 - y, theta % 180.0)
+        else:
+            reference = (1000.0 - y, x, (theta + 90.0) % 180.0)
     return transformed_path, reference
 
 
