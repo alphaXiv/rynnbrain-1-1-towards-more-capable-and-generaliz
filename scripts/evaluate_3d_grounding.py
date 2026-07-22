@@ -67,17 +67,29 @@ def build_prompt(
         if include_intrinsics
         else ""
     )
-    center_fields = "u, v, z" if center_representation == "pixel_uvz" else "cx, cy, cz"
-    center_definition = (
-        "u, v: pixel coordinates of the 3D box center; z: depth in meters"
-        if center_representation == "pixel_uvz"
-        else f"cx, cy, cz: 3D coordinates of the box center in the camera coordinate system, in {coordinate_units}"
-    )
-    units_constraint = (
-        "Use pixels for u, v and meters for z, x_size, y_size, z_size"
-        if center_representation == "pixel_uvz"
-        else f"Use {coordinate_units} for cx, cy, cz, x_size, y_size, z_size"
-    )
+    if center_representation == "pixel_uvz":
+        center_fields = "u, v, z"
+        center_definition = "u, v: pixel coordinates of the 3D box center; z: depth in meters"
+        units_constraint = "Use pixels for u, v and meters for z, x_size, y_size, z_size"
+    elif center_representation == "normalized_uvz":
+        center_fields = "u_1000, v_1000, z"
+        center_definition = (
+            "u_1000, v_1000: image coordinates of the 3D box center normalized "
+            "to [0, 1000]; z: depth in meters"
+        )
+        units_constraint = (
+            "Use [0, 1000] normalized image coordinates for u_1000, v_1000 "
+            "and meters for z, x_size, y_size, z_size"
+        )
+    else:
+        center_fields = "cx, cy, cz"
+        center_definition = (
+            "cx, cy, cz: 3D coordinates of the box center in the camera "
+            f"coordinate system, in {coordinate_units}"
+        )
+        units_constraint = (
+            f"Use {coordinate_units} for cx, cy, cz, x_size, y_size, z_size"
+        )
     example = ""
     if serialization_example is not None:
         serialized = ", ".join(f"{value:.2f}" for value in serialization_example)
@@ -245,12 +257,19 @@ def main() -> None:
             response = processor.decode(output_ids[0], skip_special_tokens=True)
             boxes = parse_boxes(response)
             camera_boxes = boxes
-            if center_representation == "pixel_uvz":
+            if center_representation in {"pixel_uvz", "normalized_uvz"}:
                 fx, fy, cx, cy = prompt_intrinsics
+                width, height = image_size
                 camera_boxes = [
                     [
-                        (box[0] - cx) * box[2] / fx,
-                        (box[1] - cy) * box[2] / fy,
+                        (
+                            (box[0] * width / 1000 if center_representation == "normalized_uvz" else box[0])
+                            - cx
+                        ) * box[2] / fx,
+                        (
+                            (box[1] * height / 1000 if center_representation == "normalized_uvz" else box[1])
+                            - cy
+                        ) * box[2] / fy,
                         box[2],
                         *box[3:],
                     ]
