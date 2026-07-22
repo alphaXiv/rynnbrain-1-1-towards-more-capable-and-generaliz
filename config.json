@@ -5,7 +5,7 @@
   "include_intrinsics": true,
   "fixed_image_case_id": "sunrgbd_chair",
   "fixed_requested_category": "chair",
-  "principal_x_offset_sweep": [-300, -200, -100, 0, 100, 200, 300, 400],
+  "principal_y_offset_sweep": [-250, -175, -100, 0, 100, 175, 250, 350],
   "white_frame": false,
   "blur_radius": 0.0,
   "grayscale_frame": false,
