@@ -175,6 +175,7 @@ def main() -> None:
         include_intrinsics = bool(config.get("include_intrinsics", True))
         white_frame = bool(config.get("white_frame", False))
         blur_radius = float(config.get("blur_radius", 0.0))
+        grayscale_frame = bool(config.get("grayscale_frame", False))
         x_axis_sign = float(config.get("x_axis_sign", 1.0))
         y_axis_sign = float(config.get("y_axis_sign", 1.0))
         coordinate_scale = float(config.get("coordinate_scale", 1.0))
@@ -190,6 +191,9 @@ def main() -> None:
             if white_frame:
                 model_image_path = Path(f"/tmp/white-frame-rank-{rank}.png")
                 Image.new("RGB", image_size, "white").save(model_image_path)
+            elif grayscale_frame:
+                model_image_path = Path(f"/tmp/grayscale-frame-rank-{rank}.png")
+                source_image.convert("L").convert("RGB").save(model_image_path)
             elif blur_radius > 0:
                 model_image_path = Path(f"/tmp/blurred-frame-rank-{rank}.png")
                 source_image.convert("RGB").filter(
@@ -290,6 +294,7 @@ def main() -> None:
                 "include_intrinsics": include_intrinsics,
                 "white_frame": white_frame,
                 "blur_radius": blur_radius,
+                "grayscale_frame": grayscale_frame,
                 "x_axis_sign": x_axis_sign,
                 "y_axis_sign": y_axis_sign,
                 "coordinate_scale": coordinate_scale,
