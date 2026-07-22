@@ -5,7 +5,7 @@
   "include_intrinsics": true,
   "white_frame": false,
   "blur_radius": 0.0,
-  "x_axis_sign": -1.0,
-  "y_axis_sign": 1.0,
+  "x_axis_sign": 1.0,
+  "y_axis_sign": -1.0,
   "task": "native_3d_grounding"
 }
