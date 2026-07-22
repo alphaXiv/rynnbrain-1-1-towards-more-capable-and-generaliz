@@ -117,6 +117,10 @@ def main() -> None:
 
     case = cases[rank]
     image_path = IMAGES / case["image"]
+    intrinsics_scale = float(config.get("intrinsics_scale", 1.0))
+    prompt_intrinsics = list(case["intrinsics"])
+    prompt_intrinsics[0] *= intrinsics_scale
+    prompt_intrinsics[1] *= intrinsics_scale
     result: dict[str, object] = {
         "rank": rank,
         "case_id": case["id"],
@@ -132,7 +136,7 @@ def main() -> None:
             dtype=torch.bfloat16,
             attn_implementation="sdpa",
         ).to(device).eval()
-        prompt = build_prompt(case["category"], case["intrinsics"])
+        prompt = build_prompt(case["category"], prompt_intrinsics)
         conversation = [{
             "role": "user",
             "content": [
@@ -166,7 +170,7 @@ def main() -> None:
         projected = bool(
             boxes
             and any(
-                center_projects_inside(box, case["intrinsics"], image_size)
+                center_projects_inside(box, prompt_intrinsics, image_size)
                 for box in boxes
             )
         )
@@ -174,6 +178,8 @@ def main() -> None:
             "prompt": prompt,
             "response": response,
             "boxes": boxes,
+            "intrinsics_scale": intrinsics_scale,
+            "prompt_intrinsics": prompt_intrinsics,
             "box_count": len(boxes),
             "format_valid": bool(boxes),
             "physical_valid": physical,
@@ -189,6 +195,19 @@ def main() -> None:
             result["recorded_dimension_error_m"] = math.dist(boxes[0][3:6], reference[3:6])
             result["recorded_angle_mae"] = statistics.fmean(
                 abs(boxes[0][index] - reference[index]) for index in range(6, 9)
+            )
+        baseline = case.get("calibration_baseline")
+        if boxes and baseline is not None:
+            expected = list(baseline)
+            expected[0] /= intrinsics_scale
+            expected[1] /= intrinsics_scale
+            result["calibration_baseline"] = baseline
+            result["calibration_expected_center"] = expected[:3]
+            result["calibration_expected_center_error_m"] = math.dist(
+                boxes[0][:3], expected[:3]
+            )
+            result["calibration_unscaled_center_error_m"] = math.dist(
+                boxes[0][:3], baseline[:3]
             )
     except Exception as exc:
         result.update({
@@ -209,6 +228,9 @@ def main() -> None:
         physical = [row for row in successes if row.get("physical_valid")]
         projected = [row for row in successes if row.get("projection_valid")]
         referenced = [row for row in parsed if "recorded_center_error_m" in row]
+        calibrated = [
+            row for row in parsed if "calibration_expected_center_error_m" in row
+        ]
         summary = {
             "model_id": config["model_id"],
             "cases": len(rows),
@@ -226,6 +248,12 @@ def main() -> None:
             "mean_recorded_angle_mae": statistics.fmean(
                 row["recorded_angle_mae"] for row in referenced
             ) if referenced else None,
+            "mean_calibration_expected_center_error_m": statistics.fmean(
+                row["calibration_expected_center_error_m"] for row in calibrated
+            ) if calibrated else None,
+            "mean_calibration_unscaled_center_error_m": statistics.fmean(
+                row["calibration_unscaled_center_error_m"] for row in calibrated
+            ) if calibrated else None,
             "mean_inference_seconds": statistics.fmean(
                 row["inference_seconds"] for row in successes
             ) if successes else None,
