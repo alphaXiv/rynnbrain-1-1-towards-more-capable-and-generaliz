@@ -1,5 +1,5 @@
 {
   "model_id": "Qwen/Qwen3.5-9B",
   "max_new_tokens": 128,
-  "query_suffix": "\nReturn only one pose in exactly this format: <grasp pose> (x, y), theta </grasp pose>. Use normalized image coordinates x and y in [0, 1000] and theta in degrees."
+  "query_suffix": "\nReturn exactly one grasp pose and no prose. A valid example with three numbers is: <grasp pose> (512, 384), 0.0 </grasp pose>. Now answer for the shown object using the same format, with normalized x,y in [0,1000] and one scalar theta in degrees."
 }
