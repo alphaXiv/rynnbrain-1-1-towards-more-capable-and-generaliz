@@ -170,15 +170,15 @@ def main() -> None:
         else:
             shown_case = cases[(rank + 1) % len(cases)] if cyclic_image else case
         image_path = IMAGES / shown_case["image"]
-        focal_scale_sweep = config.get("focal_scale_sweep")
+        focal_x_scale_sweep = config.get("focal_x_scale_sweep")
         intrinsics_case = (
             shown_case
-            if focal_scale_sweep is not None
+            if focal_x_scale_sweep is not None
             else case if fixed_image_case_id is not None else shown_case
         )
-        focal_scale = (
-            float(focal_scale_sweep[rank])
-            if focal_scale_sweep is not None
+        focal_x_scale = (
+            float(focal_x_scale_sweep[rank])
+            if focal_x_scale_sweep is not None
             else 1.0
         )
         prompt_intrinsics = list(intrinsics_case["intrinsics"])
@@ -186,8 +186,8 @@ def main() -> None:
         include_intrinsics = bool(config.get("include_intrinsics", True))
         explicit_no_object = bool(config.get("explicit_no_object", False))
         white_frame = bool(config.get("white_frame", False))
-        prompt_intrinsics[0] *= intrinsics_scale * focal_scale
-        prompt_intrinsics[1] *= intrinsics_scale * focal_scale
+        prompt_intrinsics[0] *= intrinsics_scale * focal_x_scale
+        prompt_intrinsics[1] *= intrinsics_scale
         model_image_path = image_path
         with Image.open(image_path) as source_image:
             image_size = source_image.size
@@ -202,7 +202,7 @@ def main() -> None:
             "shown_category": shown_case["category"],
             "cyclic_image": cyclic_image,
             "prompt_intrinsics_case_id": intrinsics_case["id"],
-            "focal_scale": focal_scale,
+            "focal_x_scale": focal_x_scale,
             "model_id": config["model_id"],
         }
         started = time.perf_counter()
