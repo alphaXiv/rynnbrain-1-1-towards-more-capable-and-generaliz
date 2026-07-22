@@ -12,7 +12,7 @@ from pathlib import Path
 
 import torch
 from huggingface_hub import snapshot_download
-from PIL import Image
+from PIL import Image, ImageFilter
 from transformers import AutoModelForImageTextToText, AutoProcessor
 
 
@@ -43,13 +43,15 @@ def prepare_image_and_reference(
     image_path = DATA / str(case["image"])
     if transform is None:
         return image_path, reference
-    if transform != "grayscale":
+    if transform != "gaussian_blur_r16":
         raise ValueError(f"unsupported image_transform={transform!r}")
     transformed_dir = Path("/tmp/rynnbrain-transformed-inputs")
     transformed_dir.mkdir(parents=True, exist_ok=True)
     transformed_path = transformed_dir / f"{case['id']}.png"
     with Image.open(image_path) as image:
-        image.convert("L").convert("RGB").save(transformed_path)
+        image.convert("RGB").filter(ImageFilter.GaussianBlur(radius=16)).save(
+            transformed_path
+        )
     return transformed_path, reference
 
 
