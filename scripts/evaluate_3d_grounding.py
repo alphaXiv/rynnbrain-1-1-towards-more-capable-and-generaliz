@@ -108,7 +108,7 @@ def build_prompt(
         )
     return f"""Find all {category} in this image.
 
-{intrinsics_block}Predict 3D bounding boxes in the camera coordinate system, where:
+Predict 3D bounding boxes in the camera coordinate system, where:
 - x points to the {x_direction}
 - y points {y_direction}
 - z points forward
@@ -125,7 +125,7 @@ Constraints:
 - x_size >= z_size
 - {units_constraint}
 - Use normalized values in [-1, 1] for pitch, yaw, roll
-{example}
+{intrinsics_block}{example}
 <think>\n\n</think>\n\n"""
 
 
