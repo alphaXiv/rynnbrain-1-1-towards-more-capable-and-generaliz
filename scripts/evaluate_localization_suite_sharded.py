@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import copy
 import json
 import statistics
 import time
@@ -54,7 +55,17 @@ def main() -> None:
     )
 
     rows: list[dict[str, object]] = []
-    for case in cases:
+    cyclic_video_shift = int(config.get("cyclic_video_shift", 0))
+    for source_case in cases:
+        case = copy.deepcopy(source_case)
+        source_recorded_frame = case.get("recorded_frame")
+        if cyclic_video_shift and len(case["images"]) > 1:
+            shift = cyclic_video_shift % len(case["images"])
+            case["images"] = case["images"][-shift:] + case["images"][:-shift]
+            if source_recorded_frame is not None:
+                case["recorded_frame"] = (
+                    source_recorded_frame + shift
+                ) % len(case["images"])
         conversation = [{"role": "user", "content": build_content(case)}]
         inputs = processor.apply_chat_template(
             conversation,
@@ -99,6 +110,8 @@ def main() -> None:
             "task": case["task"],
             "model_id": config["model_id"],
             "image_count": len(case["images"]),
+            "cyclic_video_shift": cyclic_video_shift,
+            "source_recorded_frame": source_recorded_frame,
             "instruction": case["instruction"],
             "response": response,
             "points": points,
