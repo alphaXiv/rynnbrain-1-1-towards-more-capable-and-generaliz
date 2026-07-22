@@ -206,6 +206,7 @@ def main() -> None:
         homogeneous_intrinsics_sweep = bool(
             config.get("homogeneous_intrinsics_sweep", False)
         )
+        k33_only_sweep = bool(config.get("k33_only_sweep", False))
         prompt_intrinsics = list(intrinsics_case["intrinsics"])
         intrinsics_scale = float(config.get("intrinsics_scale", 1.0))
         include_intrinsics = bool(config.get("include_intrinsics", True))
@@ -221,8 +222,11 @@ def main() -> None:
         center_representation = str(
             config.get("center_representation", "camera_xyz")
         )
-        prompt_intrinsics[0] *= intrinsics_scale * focal_scale
-        prompt_intrinsics[1] *= intrinsics_scale * focal_scale
+        prompt_intrinsics[0] *= intrinsics_scale
+        prompt_intrinsics[1] *= intrinsics_scale
+        if not k33_only_sweep:
+            prompt_intrinsics[0] *= focal_scale
+            prompt_intrinsics[1] *= focal_scale
         if homogeneous_intrinsics_sweep:
             prompt_intrinsics[2] *= focal_scale
             prompt_intrinsics[3] *= focal_scale
@@ -272,7 +276,9 @@ def main() -> None:
             "prompt_intrinsics_case_id": intrinsics_case["id"],
             "focal_scale": focal_scale,
             "intrinsics_homogeneous_scale": (
-                focal_scale if homogeneous_intrinsics_sweep else 1.0
+                focal_scale
+                if homogeneous_intrinsics_sweep or k33_only_sweep
+                else 1.0
             ),
             "model_id": config["model_id"],
         }
@@ -297,7 +303,9 @@ def main() -> None:
                 center_representation,
                 serialization_example,
                 serialization_template_only,
-                focal_scale if homogeneous_intrinsics_sweep else 1.0,
+                focal_scale
+                if homogeneous_intrinsics_sweep or k33_only_sweep
+                else 1.0,
             )
             conversation = [{
                 "role": "user",
