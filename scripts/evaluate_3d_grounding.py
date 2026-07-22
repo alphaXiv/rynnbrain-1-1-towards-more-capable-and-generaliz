@@ -62,10 +62,17 @@ def build_prompt(
     center_representation: str = "camera_xyz",
     serialization_example: list[float] | None = None,
     serialization_template_only: bool = False,
+    defined_category: str | None = None,
 ) -> str:
     intrinsics_block = (
         f"The camera intrinsics matrix is:\n{format_intrinsics(intrinsics)}\n\n"
         if include_intrinsics
+        else ""
+    )
+    category_definition = (
+        f'For this request, "{category}" means the visual category '
+        f'"{defined_category}".\n\n'
+        if defined_category is not None
         else ""
     )
     if center_representation == "pixel_uvz":
@@ -108,7 +115,7 @@ def build_prompt(
         )
     return f"""Find all {category} in this image.
 
-{intrinsics_block}Predict 3D bounding boxes in the camera coordinate system, where:
+{category_definition}{intrinsics_block}Predict 3D bounding boxes in the camera coordinate system, where:
 - x points to the {x_direction}
 - y points {y_direction}
 - z points forward
@@ -257,6 +264,11 @@ def main() -> None:
             serialization_template_only = bool(
                 config.get("serialization_template_only", False)
             )
+            defined_category = (
+                case["category"]
+                if config.get("define_requested_category", False)
+                else None
+            )
             prompt = build_prompt(
                 requested_category,
                 prompt_intrinsics,
@@ -267,6 +279,7 @@ def main() -> None:
                 center_representation,
                 serialization_example,
                 serialization_template_only,
+                defined_category,
             )
             conversation = [{
                 "role": "user",
@@ -354,6 +367,7 @@ def main() -> None:
                 "serialization_example": serialization_example,
                 "serialization_template_only": serialization_template_only,
                 "requested_category": requested_category,
+                "defined_category": defined_category,
                 "prompt_intrinsics": prompt_intrinsics,
                 "box_count": len(boxes),
                 "format_valid": bool(boxes),

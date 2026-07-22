@@ -14,5 +14,16 @@
   "coordinate_units": "meters",
   "center_representation": "camera_xyz",
   "task": "native_3d_grounding",
-  "serialization_template_only": true
+  "serialization_template_only": true,
+  "define_requested_category": true,
+  "category_overrides": {
+    "sunrgbd_chair": "blicket",
+    "sunrgbd_bed": "blicket",
+    "sunrgbd_table": "blicket",
+    "driving_cars": "blicket",
+    "office_chairs": "blicket",
+    "lounge_sofa": "blicket",
+    "lounge_table": "blicket",
+    "manipulation_bottle": "blicket"
+  }
 }
