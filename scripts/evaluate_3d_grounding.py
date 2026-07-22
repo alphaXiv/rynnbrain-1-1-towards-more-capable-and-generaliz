@@ -176,6 +176,7 @@ def main() -> None:
         white_frame = bool(config.get("white_frame", False))
         blur_radius = float(config.get("blur_radius", 0.0))
         grayscale_frame = bool(config.get("grayscale_frame", False))
+        image_scale = float(config.get("image_scale", 1.0))
         x_axis_sign = float(config.get("x_axis_sign", 1.0))
         y_axis_sign = float(config.get("y_axis_sign", 1.0))
         coordinate_scale = float(config.get("coordinate_scale", 1.0))
@@ -185,10 +186,20 @@ def main() -> None:
         )
         prompt_intrinsics[0] *= intrinsics_scale
         prompt_intrinsics[1] *= intrinsics_scale
+        prompt_intrinsics = [value * image_scale for value in prompt_intrinsics]
         model_image_path = image_path
         with Image.open(image_path) as source_image:
             image_size = source_image.size
-            if white_frame:
+            if image_scale != 1.0:
+                image_size = tuple(
+                    max(1, round(dimension * image_scale))
+                    for dimension in source_image.size
+                )
+                model_image_path = Path(f"/tmp/scaled-frame-rank-{rank}.png")
+                source_image.convert("RGB").resize(
+                    image_size, Image.Resampling.LANCZOS
+                ).save(model_image_path)
+            elif white_frame:
                 model_image_path = Path(f"/tmp/white-frame-rank-{rank}.png")
                 Image.new("RGB", image_size, "white").save(model_image_path)
             elif grayscale_frame:
@@ -295,6 +306,7 @@ def main() -> None:
                 "white_frame": white_frame,
                 "blur_radius": blur_radius,
                 "grayscale_frame": grayscale_frame,
+                "image_scale": image_scale,
                 "x_axis_sign": x_axis_sign,
                 "y_axis_sign": y_axis_sign,
                 "coordinate_scale": coordinate_scale,
